@@ -1,0 +1,30 @@
+/* MusicSense 0.5.1: enquadramento responsivo sem zoom/corte */
+.viewer{aspect-ratio:16/9!important;max-width:100%;overflow:hidden;background:#000}
+.viewer #player{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;overflow:hidden;background:#000}
+.viewer #player iframe,.viewer iframe[src*="youtube.com"],.viewer iframe[src*="youtube-nocookie.com"]{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-width:0!important;max-width:100%!important;border:0!important;transform:none!important;object-fit:contain!important}
+.viewer>video{object-fit:contain!important}
+.viewer>img{object-fit:contain}
+.viewer:fullscreen,.viewer:-webkit-full-screen{width:100vw!important;height:100dvh!important;max-width:none!important;aspect-ratio:auto!important;border-radius:0!important;background:#000!important;overflow:hidden}
+.viewer:fullscreen #player,.viewer:-webkit-full-screen #player{position:absolute!important;top:50%!important;left:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%)!important;width:100vw!important;height:auto!important;aspect-ratio:16/9!important;max-height:100dvh!important}
+.viewer:fullscreen #player iframe,.viewer:-webkit-full-screen #player iframe{width:100%!important;height:100%!important}
+.viewer:fullscreen>video,.viewer:-webkit-full-screen>video{object-fit:contain!important}
+.viewer:fullscreen .captions,.viewer:-webkit-full-screen .captions{bottom:max(12px,calc((100dvh - 56.25vw)/2 + 10px));left:0;right:0;max-width:100%;padding:10px clamp(12px,3vw,36px) 12px}
+.viewer:fullscreen .original,.viewer:-webkit-full-screen .original{font-size:clamp(17px,3.6vw,36px)!important}
+.viewer:fullscreen .translation,.viewer:-webkit-full-screen .translation{font-size:clamp(13px,2.8vw,26px)!important}
+@media(max-width:640px){
+ .viewer{aspect-ratio:16/9!important}
+ .viewer .captions{padding:5px 8px 8px!important}
+ .viewer .original{font-size:clamp(13px,3.5vw,18px)!important;line-height:1.13;margin-bottom:4px}
+ .viewer .translation{font-size:clamp(11px,2.9vw,15px)!important;line-height:1.15}
+ .viewer:fullscreen .captions,.viewer:-webkit-full-screen .captions{bottom:max(12px,calc((100dvh - 56.25vw)/2 + 8px));padding:7px 12px!important}
+ .viewer:fullscreen .original,.viewer:-webkit-full-screen .original{font-size:clamp(17px,4.3vw,24px)!important}
+ .viewer:fullscreen .translation,.viewer:-webkit-full-screen .translation{font-size:clamp(13px,3.3vw,18px)!important}
+}
+@media(orientation:landscape) and (max-height:500px){
+ .viewer:fullscreen #player,.viewer:-webkit-full-screen #player{width:min(100vw,177.7778dvh)!important;height:min(100dvh,56.25vw)!important}
+ .viewer:fullscreen .captions,.viewer:-webkit-full-screen .captions{bottom:6px!important}
+ .viewer:fullscreen .original,.viewer:-webkit-full-screen .original{font-size:clamp(15px,3vh,23px)!important}
+ .viewer:fullscreen .translation,.viewer:-webkit-full-screen .translation{font-size:clamp(12px,2.5vh,17px)!important}
+}
+
+[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]

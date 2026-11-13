@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $publish = Join-Path $root 'public'
 New-Item -ItemType Directory -Force -Path $publish | Out-Null
-$assets = @('index.html','core2.js','youtube2.js','extras2.js','export2.js','studio2.css','cloud-preview.js')
+$assets = @('index.html','core2.js','youtube2.js','extras2.js','export2.js','studio2.css','cloud-preview.js','mobile_fit_051.css')
 foreach ($asset in $assets) {
   $from = Join-Path $root $asset
   if (-not (Test-Path -LiteralPath $from)) { throw "Arquivo ausente: $asset" }
@@ -10,6 +10,9 @@ foreach ($asset in $assets) {
 }
 $indexPath = Join-Path $publish 'index.html'
 $html = [System.IO.File]::ReadAllText($indexPath)
+if (-not $html.Contains('mobile_fit_051.css')) {
+  $html = $html.Replace('</head>', '<link rel="stylesheet" href="mobile_fit_051.css?v=051"></head>')
+}
 if (-not $html.Contains('cloud-preview.js')) {
   $html = $html.Replace('</body></html>', '<script src="cloud-preview.js?v=1"></script></body></html>')
 }
