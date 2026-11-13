@@ -26,3 +26,9 @@ Reprodução de vídeos do YouTube pode ser bloqueada por seus titulares. Transc
 Não incluir no GitHub: `.venv`, áudios pessoais, modelos, cache e credenciais.
 
 [executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]
+
+## Atualização da publicação
+
+No computador do escritório, execute `PUBLICAR_NETLIFY.bat` para reconstruir `public/` com a indicação explícita de demonstração e publicar exclusivamente no projeto Netlify `musicsense`.
+
+**Importante:** no momento, o site Netlify foi publicado pela CLI de forma manual. Enviar commits ao GitHub **não** atualiza o Netlify automaticamente até que a integração de deploy contínuo seja configurada.
