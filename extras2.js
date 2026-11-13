@@ -24,5 +24,3 @@ const html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title
 const w=window.open('','_blank');if(!w){setStatus('Permita pop-ups para visualizar o PDF.');return}w.document.open();w.document.write(html);w.document.close();$('pdfDialog').close()};
 $('exportVideo').onclick=()=>{if(!analyzed?.segments?.length)return setStatus('Analise uma música primeiro.');if(!lastFile)return setStatus('Para exportar MP4, carregue um arquivo local que você tenha autorização para compartilhar. A exportação de links do YouTube não está habilitada.');setStatus('Preparando exportação do vídeo legendado...');window.MusicSenseExport?.start?.()};
 })();
-
-[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]
