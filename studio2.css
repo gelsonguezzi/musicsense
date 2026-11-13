@@ -3,4 +3,24 @@
 html,body{max-width:100%;overflow-x:clip}
 @media(max-width:640px){.shell{width:100%;max-width:100%;overflow-x:clip}.workspace{grid-template-columns:minmax(0,1fr)}.intro h1{font-size:clamp(29px,7.2vw,40px);overflow-wrap:break-word;letter-spacing:-1.2px}.topright .version{display:none}.live{font-size:9px}.panel{min-width:0}.mode-buttons{min-width:0}.modebtn{min-width:0;padding:8px 4px;font-size:10px}.playerbar .btn{font-size:10px}.uploadrow .filename{max-width:100%}}
 
-[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]
+/* Karaoke 0.5: frases compactas, contraste e bolinha dançante */
+.captions{padding:8px 24px 20px;bottom:0;max-width:100%;background:linear-gradient(0deg,rgba(2,4,13,.90),rgba(2,4,13,.42) 75%,transparent)}
+.original{font-size:clamp(17px,1.65vw,25px);line-height:1.22;margin-bottom:7px;max-width:100%;overflow-wrap:break-word}
+.translation{font-size:clamp(13px,1.12vw,17px);line-height:1.25;max-width:100%;overflow-wrap:break-word}
+.original span{display:inline-block;position:relative;white-space:normal}
+.ball{position:absolute;left:50%;top:-16px;transform:translateX(-50%);width:12px;height:12px;background:#71edff;box-shadow:0 0 12px #42dafa;animation:musicBounce .42s cubic-bezier(.35,0,.6,1) infinite alternate;pointer-events:none}
+@keyframes musicBounce{from{transform:translate(-50%,-2px) scale(.85)}to{transform:translate(-50%,-23px) scale(1.12)}}
+.viewer:fullscreen .original{font-size:clamp(23px,3vw,43px)}
+.viewer:fullscreen .translation{font-size:clamp(17px,2.1vw,29px)}
+@media(max-width:640px){.captions{padding:7px 10px 12px}.original{font-size:clamp(15px,4vw,21px)}.translation{font-size:clamp(12px,3.2vw,16px)}.ball{top:-11px;width:9px;height:9px}}
+
+/* iPad Safari: full-window theater fallback when Fullscreen API is unavailable */
+body.ipad-theater-open{overflow:hidden!important;touch-action:manipulation}
+.viewer.ipad-theater{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;aspect-ratio:auto!important;border-radius:0!important;z-index:2147483000!important;background:#050713!important}
+.viewer.ipad-theater .original{font-size:clamp(23px,3vw,43px)}
+.viewer.ipad-theater .translation{font-size:clamp(17px,2.1vw,29px)}
+.viewer.ipad-theater .captions{padding-bottom:max(24px,env(safe-area-inset-bottom))}
+
+/* Karaoke: espaco visual consistente entre palavras mesmo durante destaque e movimento */
+.original span:not(.ball){margin-right:.28em}
+.original span:last-child{margin-right:0}
