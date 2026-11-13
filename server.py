@@ -50,16 +50,32 @@ def analyze(filepath, language):
     with _ANALYZE_LOCK:
         start=time.monotonic()
         model=get_model()
-        segments,info=model.transcribe(str(filepath),language=language or None,word_timestamps=True,vad_filter=True,beam_size=2,best_of=2,condition_on_previous_text=False)
+        segments,info=model.transcribe(str(filepath),language=language or None,word_timestamps=True,vad_filter=False,beam_size=4,best_of=3,condition_on_previous_text=True,initial_prompt='English song lyrics, sung words and spoken introductions.',no_speech_threshold=0.85)
         segments=list(segments)
         print('[IA] Transcricao em %.1fs'%(time.monotonic()-start),flush=True)
-    texts=[s.text.strip() for s in segments]
+    # Frases de karaoke: usar os tempos REAIS das palavras, nunca frases enormes.
+    # O VAD desativado preserva a voz cantada que antes era descartada.
+    groups=[]
+    for s in segments:
+        words=[{'text':w.word.strip(),'start':round(w.start if w.start is not None else s.start,3),'end':round(w.end if w.end is not None else s.end,3)} for w in (s.words or []) if w.word.strip()]
+        if not words:
+            if s.text.strip():groups.append((round(s.start,3),round(s.end,3),s.text.strip(),[]))
+            continue
+        chunk=[]
+        for w in words:
+            if chunk and (w['start']-chunk[-1]['end']>0.8 or w['end']-chunk[0]['start']>5.5 or len(chunk)>=9):
+                groups.append((chunk[0]['start'],chunk[-1]['end'],' '.join(x['text'] for x in chunk),chunk))
+                chunk=[]
+            chunk.append(w)
+            if w['text'].endswith(('.', '?', '!', ';', ':')) and len(chunk)>=3:
+                groups.append((chunk[0]['start'],chunk[-1]['end'],' '.join(x['text'] for x in chunk),chunk))
+                chunk=[]
+        if chunk:groups.append((chunk[0]['start'],chunk[-1]['end'],' '.join(x['text'] for x in chunk),chunk))
+    groups=[g for g in groups if g[2].strip()]
+    texts=[g[2] for g in groups]
     translations,engine=translate_lines(texts,info.language)
-    output=[]
-    for i,s in enumerate(segments):
-        words=[{'text':w.word.strip(),'start':round(w.start or s.start,3),'end':round(w.end or s.end,3)} for w in (s.words or [])]
-        output.append({'start':round(s.start,3),'end':round(s.end,3),'original':texts[i], 'translation':translations[i], 'words':words})
-    return {'language':info.language,'translation_engine':engine,'segments':output}
+    output=[{'start':a,'end':b,'original':txt,'translation':translations[i], 'words':ws} for i,(a,b,txt,ws) in enumerate(groups)]
+    return {'language':info.language,'translation_engine':engine,'segments':output,'audio_duration':round(info.duration or 0,2)}
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self,*a,**kw): super().__init__(*a,directory=str(ROOT),**kw)
@@ -141,6 +157,3 @@ if __name__=='__main__':
     print('MusicSense AI: http://localhost:8765')
     ThreadingHTTPServer(('127.0.0.1',8765),Handler).serve_forever()
 
-
-
-[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]
