@@ -73,5 +73,3 @@ def export_multipart(content_type,payload,cache):
             out.unlink(missing_ok=True)
             raise RuntimeError('FFmpeg: '+r.stderr[-600:])
     return '/cache/'+out.name
-
-[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]
