@@ -1,0 +1,33 @@
+MUSICSENSE AI STUDIO 0.4 - INSTALACAO ESCRITORIO
+Data: 13/11/2026
+
+ORIGEM
+Arquivos de aplicacao transferidos da versao do Alien_Ware (casa), sem alterar os arquivos da origem.
+Os arquivos do projeto ficam SOLTOS nesta pasta.
+O ZIP nesta pasta e uma copia de distribuicao dos arquivos de codigo e scripts.
+O ambiente Python (.venv), os modelos IA, os arquivos de cache e musicas pessoais nao fazem parte do ZIP.
+
+COMO ABRIR
+1. Execute INICIAR_WINDOWS.bat
+2. Abra http://127.0.0.1:8765
+3. Use Ctrl+F5 se o navegador estiver mostrando uma versao antiga.
+
+COMO REINSTALAR EM OUTRO WINDOWS
+1. Instale Python 3.12 x64.
+2. Extraia os arquivos do ZIP numa pasta.
+3. Execute INSTALAR_WINDOWS.bat, aguarde baixar bibliotecas e pacote de traducao.
+4. Execute INICIAR_WINDOWS.bat.
+5. Na primeira transcricao, o modelo Whisper small precisa ser baixado para o cache do usuario (requer internet).
+
+DEPENDENCIAS
+Python 3.12, faster-whisper 1.2.1, argostranslate, imageio-ffmpeg e yt-dlp.
+Para YouTube, o programa usa C:\Yt-dlp\yt-dlp.exe e C:\Yt-dlp\ffmpeg.exe, sem modificar esses arquivos.
+
+LIMITACOES
+YouTube pode bloquear audio ou video embutido.
+Legendas sao geradas por IA e podem conter erros.
+Exportacao MP4 e para arquivos locais autorizados.
+PDF com acordes requer acordes inseridos manualmente.
+A rede local do escritorio nao expoe automaticamente o app ao celular.
+
+[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]

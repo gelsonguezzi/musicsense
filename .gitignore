@@ -1,0 +1,25 @@
+.venv/
+.venv*/
+cache/
+_qa_studio/
+__pycache__/
+*.pyc
+*.wav
+*.mp3
+*.mp4
+*.m4a
+*.wma
+*.flac
+*.ogg
+*.zip
+*.b64
+.env
+.env.*
+.netlify/
+node_modules/
+*_backup_*
+*.backup_*
+_PREPARAR_MODELO.py
+_TESTE_INSTALACAO.py
+
+[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]

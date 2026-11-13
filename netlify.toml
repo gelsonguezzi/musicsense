@@ -1,0 +1,10 @@
+[build]
+  publish = "public"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]

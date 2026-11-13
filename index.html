@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090b16"><title>MusicSense AI | Studio</title><link rel="stylesheet" href="studio2.css?v=2"></head>
+<body><main class="shell">
+<header class="top"><div class="logo">♫ <span>Music<span class="accent">Sense</span> AI</span></div><div class="topright"><span class="live"><i></i><span id="engine">Verificando IA...</span></span><span class="version">STUDIO 0.4</span></div></header>
+<section class="intro"><div class="eyebrow">SEU ESTÚDIO DE MÚSICA E IDIOMAS</div><h1>Ouça. <em>Entenda.</em> Sinta.</h1><p>Suas músicas favoritas, com letra original e tradução acompanhando cada verso.</p></section>
+<section class="workspace">
+<div class="panel source">
+<div class="panel-head"><span class="step">01</span><div><h2>Escolha sua música</h2><p>Link do YouTube ou arquivo do computador</p></div></div>
+<label class="field-label" for="url">LINK DO YOUTUBE</label>
+<div class="urlrow"><input id="url" type="url" placeholder="Cole a URL do videoclipe"><button id="load" class="btn ghost">Abrir vídeo</button></div>
+<button id="ytAnalyze" class="btn primary full">✦ Traduzir vídeo do YouTube</button>
+<div class="divider-text"><span>OU ARQUIVO LOCAL</span></div>
+<div class="uploadrow"><label class="btn ghost upload" for="file">♫ Selecionar arquivo</label><input id="file" type="file" accept="audio/*,video/mp4,.mp3,.wav,.wma,.mp4,.m4a,.flac,.ogg"  hidden><span id="filename" class="filename">MP3, WAV, MP4, WMA, M4A, FLAC, OGG</span></div>
+<button id="analyze" class="btn primary full" disabled>✦ Preparar arquivo com IA</button>
+<div class="mode"><div class="mode-title">REPRODUÇÃO</div><div class="mode-buttons"><button id="modeVideo" class="btn ghost modebtn selected">▣ Vídeo + tradução</button><button id="modeAudio" class="btn ghost modebtn">♫ Áudio + tradução</button></div></div>
+<div id="status" class="status" role="status">Escolha uma música para começar.</div>
+</div>
+<div class="panel playerpanel"><div class="panel-head"><span class="step">02</span><div><h2>Reproduza e acompanhe</h2><p>Dois idiomas, no ritmo da música</p></div><span class="hint">Duplo clique para tela cheia</span></div>
+<div id="viewer" class="viewer" title="Duplo clique para tela cheia"><img id="poster" src="https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=1400&q=85" alt="Palco de show"><div id="player" style="position:absolute;inset:0;display:none"></div><div id="ytGesture" title="Clique para reproduzir/pausar; duplo clique para tela cheia" style="display:none;position:absolute;z-index:5;inset:0 0 20% 0;cursor:pointer"></div><video id="video" playsinline controls style="display:none"></video><div id="shade" class="shade"></div><div id="captions" class="captions"><div class="original" id="original">A música começa aqui</div><div class="translation" id="translation">Sua tradução aparece junto com a letra</div></div></div>
+<div class="playerbar"><button id="fullscreen" class="btn ghost small">⛶ Tela cheia</button><button id="next" class="btn ghost small">↪ Próxima frase</button><label class="check"><input type="checkbox" id="ball"> Bolinha</label><label class="check"><input type="checkbox" id="captoggle" checked> Legendas</label></div>
+<input id="progress" class="progress" type="range" min="0" max="3" step="1" value="0" aria-label="Posição na música"><audio id="audio" controls style="display:none"></audio>
+<div class="player-foot">Tradução gerada por IA. A precisão depende da gravação e da qualidade do áudio.</div></div>
+</section>
+<section class="actions"><div class="section-head"><div><div class="eyebrow">FERRAMENTAS</div><h2>Faça mais com sua música</h2></div></div><div class="actiongrid">
+<button id="printLyrics" class="action"><span class="actionicon">▤</span><span><strong>Letra em PDF</strong><small>Prévia, impressão e salvar</small></span></button>
+<button id="exportVideo" class="action"><span class="actionicon">▣</span><span><strong>Vídeo legendado</strong><small>Exportar MP4 para Feed</small></span></button>
+<button id="saveFavorite" class="action"><span class="actionicon">♡</span><span><strong>Favoritar</strong><small>Salvar link na sua coleção</small></span></button>
+<button id="repeatLine" class="action"><span class="actionicon">↻</span><span><strong>Repetir trecho</strong><small>Voltar ao início da frase</small></span></button>
+</div></section>
+<section class="library"><div class="section-head"><div><div class="eyebrow">SUA COLEÇÃO</div><h2>Descubra e continue ouvindo</h2><p>Duplo clique em uma capa para carregar e iniciar a análise. Vídeos sujeitos às permissões do YouTube.</p></div></div><div id="musicGrid" class="musicgrid"></div></section>
+<footer>MusicSense AI • Estúdio local • Seu computador faz a análise</footer>
+</main>
+<dialog id="pdfDialog" class="modal"><form method="dialog"><button class="close" aria-label="Fechar">×</button></form><div class="eyebrow">EXPORTAÇÃO DE LETRAS</div><h2>Preparar PDF</h2><p class="muted">Pré-visualize no navegador e escolha Imprimir ou Salvar como PDF.</p><label class="formlabel">Conteúdo<select id="pdfContent"><option value="both">Original + tradução frase a frase</option><option value="original">Somente letra original</option></select></label><label class="formlabel">Acordes opcionais<select id="pdfChords"><option value="off">Sem acordes</option><option value="on">Incluir acordes informados por você</option></select></label><label class="formlabel">Tom original dos acordes informados<select id="pdfBaseKey"><option>C</option><option>C#</option><option>D</option><option>D#</option><option>E</option><option>F</option><option>F#</option><option>G</option><option>G#</option><option>A</option><option>A#</option><option>B</option></select></label><label class="formlabel">Tom para transposição<select id="pdfKey"><option>C</option><option>C#</option><option>D</option><option>D#</option><option>E</option><option>F</option><option>F#</option><option>G</option><option>G#</option><option>A</option><option>A#</option><option>B</option></select></label><label class="formlabel">Acordes por linha (opcional, não gerados automaticamente)<textarea id="chordInput" rows="3" placeholder="Ex.: C G Am F (uma sequência por verso)"></textarea></label><button id="pdfPreview" class="btn primary full">Visualizar / Imprimir / Salvar PDF</button></dialog>
+<script src="core2.js?v=2"></script><script src="youtube2.js?v=2"></script><script src="extras2.js?v=2"></script><script src="export2.js?v=2"></script></body></html>
+
+[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]
