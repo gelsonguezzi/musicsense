@@ -19,5 +19,3 @@ ytGesture.addEventListener('click',()=>{if(ytClickTimer)clearTimeout(ytClickTime
 ytGesture.addEventListener('dblclick',e=>{e.preventDefault();if(ytClickTimer)clearTimeout(ytClickTimer);ytClickTimer=null;fullScreen()});
 function updateYtGesture(){ytGesture.style.display=sourceMode==='youtube'?'block':'none'}
 const previousMode=setMediaMode;setMediaMode=function(mode){previousMode(mode);updateYtGesture()};
-
-[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]
