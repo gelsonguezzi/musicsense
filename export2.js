@@ -11,5 +11,3 @@ window.MusicSenseExport={start:async function(){
   }catch(e){setStatus('Erro na exportação: '+e.message)}
   finally{b.disabled=false;b.innerHTML=old}
 }};
-
-[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]
