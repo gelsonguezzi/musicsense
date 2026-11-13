@@ -37,5 +37,3 @@ BACKUP:
 index_backup_before_studio2.html
 server_backup_before_studio2.py
 youtube_ui_backup_before_studio2.js
-
-[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]
