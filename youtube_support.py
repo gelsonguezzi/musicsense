@@ -4,11 +4,12 @@ import json
 import re
 import subprocess
 import tempfile
+import shutil
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
-YTDLP = Path(r"C:\Yt-dlp\yt-dlp.exe")
-FFMPEG = Path(r"C:\Yt-dlp")
+YTDLP = Path(r"C:\Yt-dlp\yt-dlp.exe") if Path(r"C:\Yt-dlp\yt-dlp.exe").is_file() else Path(shutil.which("yt-dlp") or "yt-dlp")
+FFMPEG = Path(r"C:\Yt-dlp") if (Path(r"C:\Yt-dlp")/"ffmpeg.exe").is_file() else Path(shutil.which("ffmpeg") or "ffmpeg").parent
 MAX_DURATION = 900
 
 def video_id_from_url(url):

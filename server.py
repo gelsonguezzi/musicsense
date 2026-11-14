@@ -36,7 +36,7 @@ def get_model():
             from faster_whisper import WhisperModel
             start=time.monotonic()
             print('[IA] Carregando modelo...',flush=True)
-            _MODEL=WhisperModel(os.getenv('MUSICSENSE_MODEL','small'),device='cpu',compute_type='int8',cpu_threads=min(6,os.cpu_count() or 4),num_workers=1,local_files_only=True)
+            _MODEL=WhisperModel(os.getenv('MUSICSENSE_MODEL','small'),device='cpu',compute_type='int8',cpu_threads=min(6,os.cpu_count() or 4),num_workers=1,local_files_only=False)
             print('[IA] Modelo pronto em %.1fs'%(time.monotonic()-start),flush=True)
     return _MODEL
 
@@ -95,7 +95,7 @@ class Handler(SimpleHTTPRequestHandler):
     def __init__(self,*a,**kw): super().__init__(*a,directory=str(ROOT),**kw)
     def search_youtube(self,query):
         import subprocess
-        cmd=[str(Path(r'C:\Yt-dlp\yt-dlp.exe')),'--ignore-config','--flat-playlist','--dump-single-json','--no-warnings','--skip-download','ytsearch15:'+query]
+        cmd=[str(Path(r'C:\Yt-dlp\yt-dlp.exe') if Path(r'C:\Yt-dlp\yt-dlp.exe').is_file() else (__import__('shutil').which('yt-dlp') or 'yt-dlp')),'--ignore-config','--flat-playlist','--dump-single-json','--no-warnings','--skip-download','ytsearch15:'+query]
         r=subprocess.run(cmd,capture_output=True,text=True,timeout=35)
         if r.returncode:raise RuntimeError((r.stderr or 'Busca indisponível')[-250:])
         data=json.loads(r.stdout)
