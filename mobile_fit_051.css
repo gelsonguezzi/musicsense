@@ -26,5 +26,3 @@
  .viewer:fullscreen .original,.viewer:-webkit-full-screen .original{font-size:clamp(15px,3vh,23px)!important}
  .viewer:fullscreen .translation,.viewer:-webkit-full-screen .translation{font-size:clamp(12px,2.5vh,17px)!important}
 }
-
-[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]

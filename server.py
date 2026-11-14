@@ -1,4 +1,4 @@
-﻿import json, os, sys, tempfile, traceback, re, threading, time
+import json, os, sys, tempfile, traceback, re, threading, time
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse
@@ -11,14 +11,18 @@ CACHE=ROOT/'cache'; CACHE.mkdir(exist_ok=True)
 def translate_lines(lines, source):
     try:
         import argostranslate.translate as tr
-        import argostranslate.package as pkg
-        langs=tr.get_installed_languages()
-        origin=next((x for x in langs if x.code==source),None)
-        target=next((x for x in langs if x.code=='pt'),None)
-        if origin and target:
-            translator=origin.get_translation(target)
-            return [translator.translate(line) for line in lines], 'argos-local'
-    except Exception: pass
+        langs={x.code:x for x in tr.get_installed_languages()}
+        if source=='pt':return list(lines),'original-portugues'
+        if source in langs and 'pt' in langs:
+            # Direct translation first; fall back to Italian -> English -> Portuguese.
+            if source=='it' and 'en' in langs:
+                via=langs['it'].get_translation(langs['en'])
+                target=langs['en'].get_translation(langs['pt'])
+                return [target.translate(via.translate(line)) if line.strip() else '' for line in lines], 'argos-it-en-pt'
+            translator=langs[source].get_translation(langs['pt'])
+            return [translator.translate(line) if line.strip() else '' for line in lines], 'argos-local'
+    except Exception as exc:
+        print('[TRANSLATION ERROR]',repr(exc),flush=True)
     return ['' for _ in lines], 'indisponivel'
 
 _MODEL = None
@@ -50,7 +54,7 @@ def analyze(filepath, language):
     with _ANALYZE_LOCK:
         start=time.monotonic()
         model=get_model()
-        segments,info=model.transcribe(str(filepath),language=language or None,word_timestamps=True,vad_filter=False,beam_size=4,best_of=3,condition_on_previous_text=True,initial_prompt='English song lyrics, sung words and spoken introductions.',no_speech_threshold=0.85)
+        segments,info=model.transcribe(str(filepath),language=language or None,word_timestamps=True,vad_filter=False,beam_size=4,best_of=3,condition_on_previous_text=False,initial_prompt=None,no_speech_threshold=0.65,compression_ratio_threshold=2.2)
         segments=list(segments)
         print('[IA] Transcricao em %.1fs'%(time.monotonic()-start),flush=True)
     # Frases de karaoke: usar os tempos REAIS das palavras, nunca frases enormes.
@@ -71,7 +75,17 @@ def analyze(filepath, language):
                 groups.append((chunk[0]['start'],chunk[-1]['end'],' '.join(x['text'] for x in chunk),chunk))
                 chunk=[]
         if chunk:groups.append((chunk[0]['start'],chunk[-1]['end'],' '.join(x['text'] for x in chunk),chunk))
-    groups=[g for g in groups if g[2].strip()]
+    # Reject recurring Whisper hallucinations and invalid word timestamps.
+    groups=[g for g in groups if g[2].strip() and g[1]>g[0] and
+        not re.search(r'English song lyrics, sung words and spoken introductions',g[2],re.I)]
+    groups.sort(key=lambda g:g[0])
+    cleaned=[]
+    for g in groups:
+        if cleaned and g[0]<cleaned[-1][1]-0.3:
+            if g[1]<=cleaned[-1][1]:continue
+            g=(cleaned[-1][1],g[1],g[2],[w for w in g[3] if w['end']>cleaned[-1][1]])
+        if g[1]>g[0]:cleaned.append(g)
+    groups=cleaned
     texts=[g[2] for g in groups]
     translations,engine=translate_lines(texts,info.language)
     output=[{'start':a,'end':b,'original':txt,'translation':translations[i], 'words':ws} for i,(a,b,txt,ws) in enumerate(groups)]
@@ -79,8 +93,29 @@ def analyze(filepath, language):
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self,*a,**kw): super().__init__(*a,directory=str(ROOT),**kw)
+    def search_youtube(self,query):
+        import subprocess
+        cmd=[str(Path(r'C:\Yt-dlp\yt-dlp.exe')),'--ignore-config','--flat-playlist','--dump-single-json','--no-warnings','--skip-download','ytsearch15:'+query]
+        r=subprocess.run(cmd,capture_output=True,text=True,timeout=35)
+        if r.returncode:raise RuntimeError((r.stderr or 'Busca indisponível')[-250:])
+        data=json.loads(r.stdout)
+        videos=[]
+        for item in data.get('entries',[]):
+            if not item:continue
+            vid=item.get('id','')
+            if not re.fullmatch('[A-Za-z0-9_-]{11}',vid):continue
+            videos.append({'id':vid,'title':item.get('title') or 'Vídeo do YouTube','channel':item.get('channel') or item.get('uploader') or '', 'duration':item.get('duration')})
+        return videos
+
     def do_GET(self):
         if urlparse(self.path).path=='/api/health': return self.send_json({'ok':True,'mode':'local'})
+        if urlparse(self.path).path=='/api/youtube-search':
+            from urllib.parse import parse_qs
+            query=parse_qs(urlparse(self.path).query).get('q',[''])[0].strip()
+            if not 2<=len(query)<=100:return self.send_json({'error':'Informe um artista ou música (2 a 100 caracteres).'},400)
+            try:return self.send_json({'videos':self.search_youtube(query)})
+            except Exception as exc:return self.send_json({'error':'Busca indisponível: '+str(exc)},502)
+
         return super().do_GET()
     def send_json(self,obj,status=200):
         data=json.dumps(obj,ensure_ascii=False).encode('utf-8')
@@ -156,4 +191,5 @@ class Handler(SimpleHTTPRequestHandler):
 if __name__=='__main__':
     print('MusicSense AI: http://localhost:8765')
     ThreadingHTTPServer(('127.0.0.1',8765),Handler).serve_forever()
+
 

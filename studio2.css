@@ -24,3 +24,16 @@ body.ipad-theater-open{overflow:hidden!important;touch-action:manipulation}
 /* Karaoke: espaco visual consistente entre palavras mesmo durante destaque e movimento */
 .original span:not(.ball){margin-right:.28em}
 .original span:last-child{margin-right:0}
+
+/* MusicSense YouTube search */
+.ms-search-panel{margin:10px 0 17px}
+.ms-search-row{display:flex;gap:8px;margin-top:8px;align-items:stretch}
+.ms-search-row input{min-width:0;flex:1;background:#0b1021;color:#fff;border:1px solid #454a69;border-radius:11px;padding:11px 12px}
+.ms-search-row button{white-space:nowrap}
+.ms-search-help{color:#a9a9c6;font-size:11px;line-height:1.45;margin-top:8px}
+.urlrow{flex-wrap:wrap}
+#ytPaste{white-space:nowrap}
+@media(max-width:600px){.ms-search-row{flex-wrap:wrap}.ms-search-row input{flex-basis:100%}.ms-search-row button{width:100%}}
+.musicitem{position:relative}
+.musicitem .music-remove{position:absolute;right:7px;top:7px;width:29px;height:29px;border:1px solid #ffffff99;border-radius:50%;background:#151727e8;color:white;font-size:21px;line-height:1;display:grid;place-items:center;z-index:4;cursor:pointer}
+.musicitem .music-remove:hover{background:#bc3757}

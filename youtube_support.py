@@ -47,12 +47,65 @@ def fetch_audio_for_playback(url, cache_dir):
         shutil.copyfile(source, target)
     return target
 
+
+def fetch_manual_captions(video_id, cache_dir):
+    """Prefer creator-supplied captions. Never use automatic captions as authoritative."""
+    import html
+    from datetime import timedelta
+    canonical='https://www.youtube.com/watch?v='+video_id
+    with tempfile.TemporaryDirectory(prefix='musicsense_caps_') as tmp:
+        cmd=[str(YTDLP),'--ignore-config','--skip-download','--write-subs',
+             '--sub-langs','en.*,es.*,it.*,pt.*','--sub-format','vtt',
+             '-o',str(Path(tmp)/'captions.%(ext)s'),canonical]
+        try:
+            proc=subprocess.run(cmd,capture_output=True,text=True,timeout=45)
+            files=list(Path(tmp).glob('captions.*.vtt'))
+            if proc.returncode or not files:return None
+            files.sort(key=lambda f: (0 if '.en' in f.name else 1 if '.es' in f.name else 2 if '.it' in f.name else 3))
+            vtt=files[0].read_text(encoding='utf-8-sig')
+            lang=files[0].name.split('.')[1].split('-')[0]
+            def seconds(st):
+                parts=st.split(':')
+                return round(sum(float(x)*60**i for i,x in enumerate(reversed(parts))),3)
+            result=[]
+            for block in re.split(r'\n\s*\n',vtt):
+                lines=[x.strip() for x in block.splitlines() if x.strip()]
+                stamp=next((i for i,x in enumerate(lines) if '-->' in x),None)
+                if stamp is None:continue
+                start,end=lines[stamp].split('-->',1)
+                end=end.strip().split()[0]
+                text=' '.join(lines[stamp+1:])
+                text=re.sub(r'<[^>]*>','',text)
+                text=html.unescape(text)
+                text=re.sub(r'[♪♫♬]+','',text).strip()
+                if not text or (text.startswith('(') and text.endswith(')')) or (text.startswith('[') and text.endswith(']')):continue
+                a,b=seconds(start.strip()),seconds(end)
+                if b<=a:continue
+                result.append({'start':a,'end':b,'original':text,'words':[]})
+            if len(result)<12:return None
+            # Split overly long captions only at punctuation, never fabricate word timing.
+            from server import translate_lines
+            translated,engine=translate_lines([x['original'] for x in result],lang)
+            for seg,pt in zip(result,translated):seg['translation']=pt
+            return {'language':lang,'translation_engine':engine,'segments':result,
+                    'audio_duration':round(max(x['end'] for x in result),2),
+                    'caption_source':'youtube_manual'}
+        except Exception as exc:
+            print('[CAPTIONS] Falha:',exc,flush=True)
+            return None
+
 def fetch_audio_and_analyze(url, cache_dir, analyze_func):
     video_id = video_id_from_url(url)
     cache_file = cache_dir / ("youtube_" + video_id + ".json")
     if cache_file.exists():
         cached=json.loads(cache_file.read_text(encoding='utf-8'))
-        if cached.get('karaoke_schema')==2 and len(cached.get('segments',[]))>=4:
+        if cached.get('karaoke_schema')==4 and len(cached.get('segments',[]))>=4:
+            if cached.get('language')=='it' and any(not x.get('translation') for x in cached['segments']):
+                from server import translate_lines
+                pts,engine=translate_lines([x['original'] for x in cached['segments']],'it')
+                for x,pt in zip(cached['segments'],pts):x['translation']=pt
+                cached['translation_engine']=engine
+                cache_file.write_text(json.dumps(cached,ensure_ascii=False),encoding='utf-8')
             return cached
     if not YTDLP.is_file():
         raise RuntimeError("yt-dlp não encontrado no computador.")
@@ -76,8 +129,8 @@ def fetch_audio_and_analyze(url, cache_dir, analyze_func):
             if not files: raise RuntimeError("O áudio não foi criado.")
             import shutil
             shutil.copyfile(files[0],audio_file)
-    data = analyze_func(str(audio_file), "en")
-    data['karaoke_schema']=2
+    data = fetch_manual_captions(video_id,cache_dir) or analyze_func(str(audio_file), None)
+    data['karaoke_schema']=4
     data["video_id"] = video_id
     data["title"] = title if title != 'Vídeo do YouTube' else 'YouTube • '+video_id
     data["artist"] = info.get('artist') or info.get('uploader') or ''

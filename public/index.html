@@ -1,14 +1,19 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090b16"><title>MusicSense AI | Studio</title><link rel="stylesheet" href="studio2.css?v=5"><link rel="stylesheet" href="mobile_fit_051.css?v=051"></head>
-<body><main class="shell">
-<header class="top"><div class="logo">♫ <span>Music<span class="accent">Sense</span> AI</span></div><div class="topright"><span class="live"><i></i><span id="engine">Verificando IA...</span></span><span class="version">STUDIO 0.5 • KARAOKE</span></div></header>
-<section class="intro"><div class="eyebrow">SEU ESTÚDIO DE MÚSICA E IDIOMAS</div><h1>Ouça. <em>Entenda.</em> Sinta.</h1><p>Suas músicas favoritas, com letra original e tradução acompanhando cada verso.</p></section>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090b16"><title>MusicSense AI | Studio</title><link rel="stylesheet" href="studio2.css?v=11"><link rel="stylesheet" href="mobile_fit_051.css?v=051"><link rel="stylesheet" href="cinema_19.css?v=194"></head>
+<body><aside id="ytResults" class="yt-results" hidden><div class="yt-results-head"><strong id="ytResultsTitle">Resultados do YouTube</strong><button type="button" id="ytResultsClose" title="Fechar">×</button></div><div id="ytResultsList" class="yt-results-list"></div></aside><main class="shell">
+<header class="top"><div class="logo">♫ <span>Music<span class="accent">Sense</span> AI</span></div><div class="topright"><span class="live"><i></i><span id="engine">Verificando IA...</span></span><span class="version">STUDIO 1.9.1 • CINEMA</span></div></header>
+<section class="intro"><div class="eyebrow">SEU ESTÚDIO DE MÚSICA E IDIOMAS</div><h1>Ouça. <em>Entenda.</em> Sinta. Sonhe.</h1><p>Suas músicas favoritas, com letra original e tradução acompanhando cada verso.</p></section>
 <section class="workspace">
 <div class="panel source">
 <div class="panel-head"><span class="step">01</span><div><h2>Escolha sua música</h2><p>Link do YouTube ou arquivo do computador</p></div></div>
-<label class="field-label" for="url">LINK DO YOUTUBE</label>
-<div class="urlrow"><input id="url" type="url" placeholder="Cole a URL do videoclipe"><button id="load" class="btn ghost">Abrir vídeo</button></div>
-<button id="ytAnalyze" class="btn primary full">✦ Traduzir vídeo do YouTube</button>
+<div class="ms-search-panel">
+  <label class="field-label" for="ytSearchText">PESQUISAR MÚSICA NO YOUTUBE</label>
+  <div class="ms-search-row"><input id="ytSearchText" type="search" placeholder="Digite artista ou nome da música"><button type="button" id="ytSearchGo" class="btn ghost">Pesquisar no YouTube</button><button type="button" id="ytBring" class="btn primary">Trazer do YouTube</button></div>
+  <div class="ms-search-help">Escolha um vídeo no YouTube, copie o link e volte aqui. O endereço será detectado quando permitido.</div>
+</div><label class="field-label" for="url">LINK DO YOUTUBE</label>
+<div class="urlrow"><input id="url" type="url" placeholder="Cole a URL do videoclipe"><button id="ytPaste" type="button" class="btn ghost">Colar link</button></div>
+<button id="load" type="button" hidden style="display:none" aria-hidden="true" tabindex="-1">Abrir vídeo</button>
+<button id="ytAnalyze" class="btn primary full">Traduzir</button>
 <div class="divider-text"><span>OU ARQUIVO LOCAL</span></div>
 <div class="uploadrow"><label class="btn ghost upload" for="file">♫ Selecionar arquivo</label><input id="file" type="file" accept="audio/*,video/mp4,.mp3,.wav,.wma,.mp4,.m4a,.flac,.ogg"  hidden><span id="filename" class="filename">MP3, WAV, MP4, WMA, M4A, FLAC, OGG</span></div>
 <button id="analyze" class="btn primary full" disabled>✦ Preparar arquivo com IA</button>
@@ -30,7 +35,5 @@
 <section class="library"><div class="section-head"><div><div class="eyebrow">SUA COLEÇÃO</div><h2>Descubra e continue ouvindo</h2><p>Duplo clique em uma capa para carregar e iniciar a análise. Vídeos sujeitos às permissões do YouTube.</p></div></div><div id="musicGrid" class="musicgrid"></div></section>
 <footer>MusicSense AI • Estúdio local • Seu computador faz a análise</footer>
 </main>
-<dialog id="pdfDialog" class="modal"><form method="dialog"><button class="close" aria-label="Fechar">×</button></form><div class="eyebrow">EXPORTAÇÃO DE LETRAS</div><h2>Preparar PDF</h2><p class="muted">Pré-visualize no navegador e escolha Imprimir ou Salvar como PDF.</p><label class="formlabel">Conteúdo<select id="pdfContent"><option value="both">Original + tradução frase a frase</option><option value="original">Somente letra original</option></select></label><label class="formlabel">Acordes opcionais<select id="pdfChords"><option value="off">Sem acordes</option><option value="on">Incluir acordes informados por você</option></select></label><label class="formlabel">Tom original dos acordes informados<select id="pdfBaseKey"><option>C</option><option>C#</option><option>D</option><option>D#</option><option>E</option><option>F</option><option>F#</option><option>G</option><option>G#</option><option>A</option><option>A#</option><option>B</option></select></label><label class="formlabel">Tom para transposição<select id="pdfKey"><option>C</option><option>C#</option><option>D</option><option>D#</option><option>E</option><option>F</option><option>F#</option><option>G</option><option>G#</option><option>A</option><option>A#</option><option>B</option></select></label><label class="formlabel">Acordes por linha (opcional, não gerados automaticamente)<textarea id="chordInput" rows="3" placeholder="Ex.: C G Am F (uma sequência por verso)"></textarea></label><button id="pdfPreview" class="btn primary full">Visualizar / Imprimir / Salvar PDF</button></dialog>
-<script src="core2.js?v=5"></script><script src="youtube2.js?v=5"></script><script src="extras2.js?v=5"></script><script src="export2.js?v=5"></script><script src="cloud-preview.js?v=1"></script></body></html>
-
-[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]
+<dialog id="pdfDialog" class="modal"><form method="dialog"><button class="close" aria-label="Fechar">×</button></form><div class="eyebrow">EXPORTAÇÃO DE LETRAS</div><h2>Preparar PDF</h2><p class="muted">Pré-visualize no navegador e escolha Imprimir ou Salvar como PDF.</p><label class="formlabel">Conteúdo<select id="pdfContent"><option value="both">Original + tradução frase a frase</option><option value="original">Somente letra original</option></select></label><button id="pdfPreview" class="btn primary full">Visualizar / Imprimir / Salvar PDF</button></dialog>
+<link rel="stylesheet" href="youtube_search_205.css?v=205"><script src="youtube_search_205.js?v=205"></script><script src="core2.js?v=6"></script><script src="youtube2.js?v=198"></script><script src="extras2.js?v=203"></script><script src="songbook_204.js?v=204"></script><script src="export2.js?v=198"></script><script src="cinema_19.js?v=191"></script><script src="cloud-preview.js?v=205"></script></body></html>

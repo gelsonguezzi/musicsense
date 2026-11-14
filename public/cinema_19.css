@@ -1,0 +1,74 @@
+/* MusicSense 1.9 - cinema responsivo: sem distorcao de imagem */
+.viewer:fullscreen,.viewer:-webkit-full-screen,.viewer.ipad-theater{background:#000!important;overflow:hidden!important;isolation:isolate}
+.viewer:fullscreen #player,.viewer:-webkit-full-screen #player,.viewer.ipad-theater #player{position:absolute!important;inset:0!important;top:0!important;left:0!important;right:0!important;bottom:0!important;transform:none!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;aspect-ratio:auto!important}
+.viewer:fullscreen #player iframe,.viewer:-webkit-full-screen #player iframe,.viewer.ipad-theater #player iframe{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;border:0!important}
+.viewer:fullscreen>video,.viewer:-webkit-full-screen>video,.viewer.ipad-theater>video{width:100%!important;height:100%!important;object-fit:contain!important}
+.viewer:fullscreen .captions,.viewer:-webkit-full-screen .captions,.viewer.ipad-theater .captions{position:absolute!important;left:0!important;right:0!important;bottom:max(12px,env(safe-area-inset-bottom))!important;top:auto!important;max-width:100%!important;padding:10px clamp(12px,3vw,40px) 14px!important;background:linear-gradient(transparent,#000c)!important;z-index:8!important}
+.viewer:fullscreen .original,.viewer:-webkit-full-screen .original,.viewer.ipad-theater .original{font-size:clamp(19px,3vw,38px)!important}
+.viewer:fullscreen .translation,.viewer:-webkit-full-screen .translation,.viewer.ipad-theater .translation{font-size:clamp(15px,2.1vw,27px)!important}
+.ms19-controls{display:none;position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));z-index:30;gap:8px}
+.ms19-controls button{background:#080a12df;border:1px solid #ffffff70;color:white;border-radius:12px;padding:12px 15px;min-height:44px;font-size:14px;cursor:pointer}
+.viewer:fullscreen.ms19-show-controls .ms19-controls,.viewer:-webkit-full-screen.ms19-show-controls .ms19-controls,.viewer.ipad-theater.ms19-show-controls .ms19-controls{display:flex}
+@media(orientation:portrait){
+.viewer:fullscreen #player,.viewer:-webkit-full-screen #player,.viewer.ipad-theater #player{inset:0 0 auto 0!important;top:0!important;left:0!important;width:100vw!important;height:auto!important;aspect-ratio:16/9!important;max-height:none!important}
+.viewer:fullscreen>video,.viewer:-webkit-full-screen>video,.viewer.ipad-theater>video{inset:0 0 auto 0!important;top:0!important;width:100vw!important;height:auto!important;aspect-ratio:16/9!important;object-fit:contain!important}
+.viewer:fullscreen .captions,.viewer:-webkit-full-screen .captions,.viewer.ipad-theater .captions{top:calc(100vw * 9 / 16 + 2px)!important;bottom:auto!important;padding:8px 12px 12px!important;background:linear-gradient(#000e,#0008 80%,transparent)!important}
+.viewer:fullscreen .original,.viewer:-webkit-full-screen .original,.viewer.ipad-theater .original{font-size:clamp(17px,4.7vw,27px)!important;margin-bottom:5px!important}
+.viewer:fullscreen .translation,.viewer:-webkit-full-screen .translation,.viewer.ipad-theater .translation{font-size:clamp(14px,3.7vw,21px)!important}
+}
+@media(orientation:landscape){
+.viewer:fullscreen #player,.viewer:-webkit-full-screen #player,.viewer.ipad-theater #player{inset:0!important;width:100vw!important;height:100dvh!important;aspect-ratio:auto!important}
+.viewer:fullscreen .captions,.viewer:-webkit-full-screen .captions,.viewer.ipad-theater .captions{top:auto!important;bottom:max(5px,env(safe-area-inset-bottom))!important;padding:6px 12px 10px!important}
+.viewer:fullscreen .original,.viewer:-webkit-full-screen .original,.viewer.ipad-theater .original{font-size:clamp(16px,3.5vh,28px)!important;margin-bottom:3px!important}
+.viewer:fullscreen .translation,.viewer:-webkit-full-screen .translation,.viewer.ipad-theater .translation{font-size:clamp(13px,2.7vh,21px)!important}
+}
+/* Cinema 1.9.1: central, large karaoke captions on fullscreen */
+.viewer:fullscreen .captions,.viewer:-webkit-full-screen .captions,.viewer.ipad-theater .captions{
+  position:absolute!important;top:50%!important;bottom:auto!important;left:50%!important;right:auto!important;
+  transform:translate(-50%,-50%)!important;width:min(94vw,1500px)!important;max-width:94vw!important;
+  padding:22px 30px!important;text-align:center!important;z-index:12!important;
+  background:radial-gradient(ellipse at center,rgba(0,0,0,.58),rgba(0,0,0,.15) 65%,transparent 100%)!important;
+  pointer-events:none!important;
+}
+.viewer:fullscreen .original,.viewer:-webkit-full-screen .original,.viewer.ipad-theater .original{
+  font-size:clamp(34px,5vw,84px)!important;line-height:1.17!important;font-weight:800!important;
+  margin-bottom:14px!important;text-shadow:0 3px 12px #000,0 6px 28px #000!important;
+}
+.viewer:fullscreen .translation,.viewer:-webkit-full-screen .translation,.viewer.ipad-theater .translation{
+  font-size:clamp(24px,3.2vw,54px)!important;line-height:1.2!important;font-weight:700!important;
+  text-shadow:0 3px 12px #000,0 6px 24px #000!important;
+}
+@media(max-width:700px){
+.viewer:fullscreen .captions,.viewer:-webkit-full-screen .captions,.viewer.ipad-theater .captions{width:96vw!important;padding:12px!important}
+.viewer:fullscreen .original,.viewer:-webkit-full-screen .original,.viewer.ipad-theater .original{font-size:clamp(26px,5vw,50px)!important}
+.viewer:fullscreen .translation,.viewer:-webkit-full-screen .translation,.viewer.ipad-theater .translation{font-size:clamp(19px,3.5vw,34px)!important}
+}
+/* Fullscreen karaoke ball: scale in proportion to the enlarged lyrics. */
+.viewer:fullscreen .original .ball,.viewer:-webkit-full-screen .original .ball,.viewer.ipad-theater .original .ball{
+  width:clamp(22px,2.7vw,46px)!important;
+  height:clamp(22px,2.7vw,46px)!important;
+  top:-.62em!important;
+  left:50%!important;
+  border-radius:50%!important;
+  background:#76f0ff!important;
+  box-shadow:0 0 12px 4px #42dafa,0 0 32px 10px #42dafa88!important;
+  z-index:14!important;
+}
+@media(max-width:700px){
+.viewer:fullscreen .original .ball,.viewer:-webkit-full-screen .original .ball,.viewer.ipad-theater .original .ball{
+  width:clamp(18px,3.5vw,30px)!important;height:clamp(18px,3.5vw,30px)!important;
+}
+}
+/* MusicSense UX 2026-11-14: proportional bilingual fullscreen captions */
+.viewer:fullscreen .original,.viewer:-webkit-full-screen .original,.viewer.ipad-theater .original{
+ font-size:clamp(29px,4.25vw,71px)!important;
+ margin-bottom:clamp(19px,2vw,34px)!important;
+}
+.viewer:fullscreen .translation,.viewer:-webkit-full-screen .translation,.viewer.ipad-theater .translation{
+ font-size:clamp(29px,4.25vw,71px)!important;
+ line-height:1.17!important;
+}
+@media(max-width:700px){
+.viewer:fullscreen .original,.viewer:-webkit-full-screen .original,.viewer.ipad-theater .original{font-size:clamp(22px,4.25vw,43px)!important}
+.viewer:fullscreen .translation,.viewer:-webkit-full-screen .translation,.viewer.ipad-theater .translation{font-size:clamp(22px,4.25vw,43px)!important}
+}
