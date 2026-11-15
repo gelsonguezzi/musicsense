@@ -17,7 +17,7 @@ const ytGesture=$('ytGesture');
 let ytClickTimer=null;
 ytGesture.addEventListener('click',()=>{if(ytClickTimer)clearTimeout(ytClickTimer);ytClickTimer=setTimeout(()=>{ytClickTimer=null;try{if(!ytReady)return;const state=ytPlayer.getPlayerState();if(state===1)ytPlayer.pauseVideo();else ytPlayer.playVideo()}catch{}},230)});
 ytGesture.addEventListener('dblclick',e=>{e.preventDefault();if(ytClickTimer)clearTimeout(ytClickTimer);ytClickTimer=null;fullScreen()});
-function updateYtGesture(){ytGesture.style.display='none'}
+function updateYtGesture(){ytGesture.style.display=sourceMode==='youtube'&&!ytError?'block':'none'}
 const previousMode=setMediaMode;setMediaMode=function(mode){previousMode(mode);updateYtGesture()};
 
 /* YouTube embedding may be forbidden by the video's owner (errors 101/150).
