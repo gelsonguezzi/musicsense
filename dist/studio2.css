@@ -64,3 +64,13 @@ body.ipad-theater-open{overflow:hidden!important;touch-action:manipulation}
 #clipDialog #clipExport{margin-top:22px;min-height:54px;font-size:14px;border-radius:12px}
 #clipDialog .close{float:right;width:35px;height:35px;display:grid;place-items:center;border:1px solid #ffffff50;border-radius:9px;background:#222942;font-size:24px;line-height:1}
 @media(max-width:600px){.mode-buttons{grid-template-columns:1fr}.mode-buttons .modebtn{font-size:12px}#clipDialog{padding:18px}#clipDialog .clip-head{gap:10px}}
+
+/* MusicSense 218: six-stem mixing console */
+.ms-mixer{width:min(850px,calc(100% - 20px));background:#0b0e18}
+.ms-mixer .mixer-controls{display:flex;flex-wrap:wrap;gap:9px;margin:20px 0}
+.ms-mixer .mixer-tracks{display:grid;gap:9px;margin-top:12px}
+.ms-mixer .mixer-row{display:grid;grid-template-columns:minmax(110px,1fr) 38px 38px minmax(100px,2fr) 80px;align-items:center;gap:8px;padding:12px;background:#1a2434;border:1px solid #ffffff22;border-radius:12px}
+.ms-mixer .mixer-row input{width:100%;accent-color:#36dbe8}
+.ms-mixer .mixer-active{background:#e7ae32!important;color:#111!important}
+@media(max-width:600px){.ms-mixer .mixer-row{grid-template-columns:1fr 38px 38px 80px}.ms-mixer .mixer-row input{grid-column:1/-1;grid-row:2}}
+
