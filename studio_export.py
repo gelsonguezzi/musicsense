@@ -39,6 +39,21 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         except (TypeError,ValueError,KeyError):continue
     if not events:raise ValueError("Não há legendas válidas para exportar.")
     return header+'\n'.join(events)+'\n'
+def make_ass_audio_218(segments):
+    ass=make_ass(segments)
+    ass=ass.replace('Style: English,Arial,32,','Style: English,Arial,55,').replace('Style: Portuguese,Arial,26,','Style: Portuguese,Arial,45,')
+    lines=[]
+    for line in ass.splitlines():
+        if line.startswith('Dialogue: '):
+            parts=line.split(',',9)
+            if len(parts)==10:
+                style=parts[3]
+                position=r'{\an5\pos(360,385)}' if style=='English' else r'{\an5\pos(360,505)}'
+                parts[9]=position+parts[9]
+                line=','.join(parts)
+        lines.append(line)
+    return '\n'.join(lines)+'\n'
+
 def export_multipart(content_type,payload,cache):
     if len(payload)>MAX_SIZE+1000000:raise ValueError('Arquivo excede 100 MB.')
     message=BytesParser(policy=default).parsebytes(('MIME-Version: 1.0\r\nContent-Type: '+content_type+'\r\n\r\n').encode()+payload)
@@ -60,13 +75,13 @@ def export_multipart(content_type,payload,cache):
     if not FFMPEG.is_file():raise RuntimeError('FFmpeg não encontrado.')
     with tempfile.TemporaryDirectory(prefix='musicsense_export_') as tmp:
         source=Path(tmp)/('input'+ext);source.write_bytes(blob)
-        ass=Path(tmp)/'captions.ass';ass.write_text(make_ass(segments),encoding='utf-8-sig')
+        ass=Path(tmp)/'captions.ass';ass.write_text(make_ass(segments) if ext=='.mp4' else make_ass_audio_218(segments),encoding='utf-8-sig')
         out=cache/('musicsense_feed_'+uuid.uuid4().hex[:12]+'.mp4')
         filter_sub='subtitles='+ass.name
         if ext=='.mp4':
             cmd=[str(FFMPEG),'-hide_banner','-loglevel','error','-y','-i',source.name,'-t','360','-vf',f"scale=720:900:force_original_aspect_ratio=decrease,pad=720:900:(ow-iw)/2:(oh-ih)/2:black,{filter_sub}",'-map','0:v:0','-map','0:a:0?','-c:v','libx264','-preset','veryfast','-crf','24','-pix_fmt','yuv420p','-c:a','aac','-b:a','160k','-movflags','+faststart',str(out)]
         else:
-            cmd=[str(FFMPEG),'-hide_banner','-loglevel','error','-y','-f','lavfi','-i','color=c=0x111527:s=720x900:r=25','-i',source.name,'-t','360','-shortest','-vf',filter_sub,'-c:v','libx264','-preset','veryfast','-crf','25','-pix_fmt','yuv420p','-c:a','aac','-b:a','160k','-movflags','+faststart',str(out)]
+            cmd=[str(FFMPEG),'-hide_banner','-loglevel','error','-y','-f','lavfi','-i','color=c=0x102f9e:s=720x900:r=25','-i',source.name,'-t','360','-shortest','-vf',filter_sub,'-c:v','libx264','-preset','veryfast','-crf','25','-pix_fmt','yuv420p','-c:a','aac','-b:a','160k','-movflags','+faststart',str(out)]
         try:r=subprocess.run(cmd,cwd=tmp,capture_output=True,text=True,timeout=600)
         except subprocess.TimeoutExpired:raise RuntimeError('Exportação excedeu 10 minutos.')
         if r.returncode or not out.exists():
