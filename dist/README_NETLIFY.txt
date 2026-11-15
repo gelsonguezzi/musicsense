@@ -1,0 +1,1 @@
+AVISO: Netlify hospeda somente a interface estatica. As funcoes Python/FFmpeg/Demucs requerem o servidor MusicSense no Alien_Ware e nao funcionam somente com este dist. Nao publicar como substituicao funcional sem configurar backend.

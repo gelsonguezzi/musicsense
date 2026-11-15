@@ -91,6 +91,9 @@ def analyze(filepath, language):
     output=[{'start':a,'end':b,'original':txt,'translation':translations[i], 'words':ws} for i,(a,b,txt,ws) in enumerate(groups)]
     return {'language':info.language,'translation_engine':engine,'segments':output,'audio_duration':round(info.duration or 0,2)}
 
+_EXPORT_JOBS={}
+_EXPORT_LOCK=__import__('threading').Lock()
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self,*a,**kw): super().__init__(*a,directory=str(ROOT),**kw)
     def search_youtube(self,query):
@@ -108,6 +111,12 @@ class Handler(SimpleHTTPRequestHandler):
         return videos
 
     def do_GET(self):
+        if urlparse(self.path).path=='/api/export-progress':
+            from urllib.parse import parse_qs
+            job=parse_qs(urlparse(self.path).query).get('id',[''])[0]
+            with _EXPORT_LOCK: data=_EXPORT_JOBS.get(job)
+            if not data:return self.send_json({'error':'Processo nao encontrado'},404)
+            return self.send_json(dict(data))
         if urlparse(self.path).path=='/api/health': return self.send_json({'ok':True,'mode':'local'})
         if urlparse(self.path).path=='/api/youtube-search':
             from urllib.parse import parse_qs
@@ -122,6 +131,124 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(status);self.send_header('Content-Type','application/json; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data)
     def do_POST(self):
         route=urlparse(self.path).path
+        if route=='/api/export-stem-karaoke':
+            try:
+                import uuid,threading
+                size=int(self.headers.get('Content-Length','0'))
+                if size<1 or size>240000:return self.send_json({'error':'Dados excedem limite'},413)
+                data=json.loads(self.rfile.read(size).decode('utf-8'))
+                job=uuid.uuid4().hex
+                with _EXPORT_LOCK:_EXPORT_JOBS[job]={'percent':1,'stage':'Preparando exportacao','done':False}
+                def work():
+                    def update(pct,stage):
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(percent=pct,stage=stage)
+                    try:
+                        from stem_karaoke_215 import export
+                        output=export(data.get('stem'),data.get('mode'),data.get('segments'),CACHE,progress=update)
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(done=True,percent=100,stage='Concluido',video_url=output)
+                    except Exception as exc:
+                        traceback.print_exc()
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(done=True,error=str(exc),stage='Erro na exportacao')
+                threading.Thread(target=work,daemon=True).start()
+                return self.send_json({'job_id':job})
+            except Exception as exc:return self.send_json({'error':str(exc)},400)
+        if route=='/api/separate-vocals':
+            try:
+                import uuid,threading
+                size=int(self.headers.get('Content-Length','0'))
+                if size<1 or size>4096:return self.send_json({'error':'Link invalido'},400)
+                data=json.loads(self.rfile.read(size).decode('utf-8'))
+                from youtube_support import video_id_from_url
+                video_id_from_url(str(data.get('url','')))
+                job=uuid.uuid4().hex
+                with _EXPORT_LOCK:_EXPORT_JOBS[job]={'percent':1,'stage':'Iniciando separacao vocal','done':False}
+                def work():
+                    def update(pct,stage):
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(percent=pct,stage=stage)
+                    try:
+                        from vocal_212 import separate
+                        result=separate(data['url'],CACHE,progress=update)
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(done=True,percent=100,stage='Concluido',**result)
+                    except Exception as exc:
+                        traceback.print_exc()
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(done=True,error=str(exc),stage='Falha na separacao')
+                threading.Thread(target=work,daemon=True).start()
+                return self.send_json({'job_id':job})
+            except Exception as exc:return self.send_json({'error':str(exc)},400)
+        if route=='/api/export-custom-start':
+            try:
+                import uuid,threading
+                size=int(self.headers.get('Content-Length','0'))
+                if size<1 or size>180*1024*1024:return self.send_json({'error':'Materiais excedem 180 MB'},413)
+                ct=self.headers.get('Content-Type','')
+                if not ct.startswith('multipart/form-data'):return self.send_json({'error':'Formulario invalido'},400)
+                body=self.rfile.read(size);job=uuid.uuid4().hex
+                with _EXPORT_LOCK:_EXPORT_JOBS[job]={'percent':3,'stage':'Arquivos recebidos','done':False}
+                def work():
+                    def update(pct,stage):
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(percent=pct,stage=stage)
+                    try:
+                        from clip_export_210 import export
+                        result=export(ct,body,CACHE,progress=update)
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(done=True,video_url=result,percent=100,stage='Concluido')
+                    except Exception as exc:
+                        traceback.print_exc()
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(done=True,error=str(exc),stage='Erro na exportacao')
+                threading.Thread(target=work,daemon=True).start()
+                return self.send_json({'job_id':job})
+            except Exception as exc:return self.send_json({'error':str(exc)},500)
+        if route=='/api/export-custom-clip':
+            try:
+                size=int(self.headers.get('Content-Length','0'))
+                if size<1 or size>180*1024*1024:return self.send_json({'error':'Materiais excedem 180 MB'},413)
+                ct=self.headers.get('Content-Type','')
+                if not ct.startswith('multipart/form-data'):return self.send_json({'error':'Envie formulario de arquivos'},400)
+                from clip_export_210 import export
+                result=export(ct,self.rfile.read(size),CACHE)
+                return self.send_json({'video_url':result})
+            except ValueError as exc:return self.send_json({'error':str(exc)},400)
+            except Exception as exc:
+                traceback.print_exc()
+                return self.send_json({'error':str(exc)},502)
+        if route=='/api/export-youtube-original':
+            try:
+                size=int(self.headers.get('Content-Length','0'))
+                if size<1 or size>200000:return self.send_json({'error':'Dados invalidos'},400)
+                payload=json.loads(self.rfile.read(size).decode('utf-8'))
+                from export_video_208 import export_youtube_video
+                result=export_youtube_video(str(payload.get('url','')),payload.get('segments'),CACHE)
+                return self.send_json({'video_url':result,'source':'youtube-video'})
+            except ValueError as exc:return self.send_json({'error':str(exc)},400)
+            except Exception as exc:
+                traceback.print_exc()
+                return self.send_json({'error':str(exc)},502)
+        if route=='/api/export-youtube-video':
+            try:
+                size=int(self.headers.get('Content-Length','0'))
+                if size<1 or size>200000:return self.send_json({'error':'Dados invalidos'},400)
+                payload=json.loads(self.rfile.read(size).decode('utf-8'))
+                from youtube_support import fetch_audio_for_playback, video_id_from_url
+                from studio_export import export_multipart
+                url=str(payload.get('url',''))
+                video_id=video_id_from_url(url)
+                segments=payload.get('segments')
+                if not isinstance(segments,list) or not 1<=len(segments)<=500:
+                    return self.send_json({'error':'Legendas invalidas'},400)
+                audio=fetch_audio_for_playback(url,CACHE)
+                if audio.stat().st_size>100*1024*1024:
+                    return self.send_json({'error':'Audio excede 100 MB'},413)
+                import uuid
+                boundary='musicexport'+uuid.uuid4().hex
+                def field(name,blob,filename=None):
+                    header=('--'+boundary+'\\r\\nContent-Disposition: form-data; name="'+name+'"'+('; filename="'+filename+'"' if filename else '')+'\\r\\nContent-Type: application/octet-stream\\r\\n\\r\\n')
+                    return header.replace('\\r','\r').replace('\\n','\n').encode()+blob+b'\r\n'
+                body=field('file',audio.read_bytes(),audio.name)+field('segments',json.dumps(segments,ensure_ascii=False).encode('utf-8'))+('--'+boundary+'--\r\n').encode()
+                result=export_multipart('multipart/form-data; boundary='+boundary,body,CACHE)
+                return self.send_json({'video_url':result,'source':'youtube-audio','video_id':video_id})
+            except ValueError as exc:return self.send_json({'error':str(exc)},400)
+            except Exception as exc:
+                traceback.print_exc()
+                return self.send_json({'error':str(exc)},502)
         if route=='/api/export-video':
             try:
                 size=int(self.headers.get('Content-Length','0'))

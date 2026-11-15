@@ -1,0 +1,6 @@
+MusicSense AI 216 - Estrutura limpa
+Pastas de colecoes: Favoritos, Videos salvos com traducao, Audios salvos com traducao, Clipes salvos personalizados, PDFs salvos.
+cache: arquivos temporarios gerados pelo servidor.
+dist: interface estatica para Netlify; nao inclui backend Python.
+.venv e .venv_demucs: ambientes Python necessarios ao funcionamento local.
+ATENCAO: favoritos salvos no navegador usam localStorage e precisam ser apagados separadamente em cada origem.

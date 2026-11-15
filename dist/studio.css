@@ -1,0 +1,50 @@
+/* MusicSense AI — Studio layout v0.3.1. Camada visual sem alterar lógica. */
+:root{color-scheme:dark;--bg:#080b16;--surface:#14192a;--border:#30354d;--muted:#a6aec7;--violet:#a58aff;--cyan:#70e2fa}
+html{min-height:100%;scroll-behavior:smooth}
+body{min-height:100vh;background:radial-gradient(ellipse 65% 55% at 80% 0%,#30204c65,transparent 75%),radial-gradient(ellipse 55% 70% at 0% 100%,#111e3650,transparent 75%),var(--bg);color:#f5f4ff}
+.shell{max-width:1440px;padding:28px clamp(20px,4vw,64px) 60px}
+.top{padding:0 0 24px;border-bottom:1px solid #ffffff15}
+.logo{font-size:24px;letter-spacing:-.8px}
+.pill{font-size:12px;background:#211b35;border-color:#655387;color:#d9c9ff;padding:9px 15px}
+.hero{display:grid;grid-template-columns:minmax(360px,.9fr) minmax(0,1.1fr);gap:clamp(24px,3vw,46px);align-items:start;margin-top:34px}
+.hero>div{min-width:0}
+.eyebrow{font-size:11px;letter-spacing:2.4px;color:#bfa6ff;margin:0 0 8px}
+h1{font-size:clamp(36px,3.8vw,55px);line-height:1.08;letter-spacing:-2.2px;margin:10px 0 12px;max-width:620px}
+h1 em{color:#bca8ff}
+.muted{font-size:14px;line-height:1.65;margin:0 0 22px;max-width:590px;color:#b4b9cf}
+.panel{background:linear-gradient(155deg,#181c2e 0%,#121626 100%);border:1px solid #ffffff1e;border-radius:22px;padding:24px;box-shadow:0 20px 55px #00000030}
+.hero>div>.panel{min-height:420px}
+.hero>div>.panel>b{display:block;font-size:16px;margin-bottom:14px;letter-spacing:.1px}
+.field{display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:10px;margin:0 0 12px}
+.field input{height:51px;background:#0e1324;border:1px solid #434962;border-radius:11px;padding:0 15px;font-size:13px;outline:none;transition:border-color .2s,box-shadow .2s}
+.field input:focus{border-color:#a58aff;box-shadow:0 0 0 3px #a58aff24}
+button,.secondary,.primary{transition:transform .16s,filter .16s,background .16s,border-color .16s}
+button:hover:not(:disabled),label.secondary:hover{filter:brightness(1.12)}
+button:active:not(:disabled){transform:translateY(1px)}
+.primary{min-height:45px;background:linear-gradient(110deg,#a78bfa,#d978d2);color:#131024;border-radius:11px;padding:11px 17px;font-size:13px;font-weight:800}
+.primary:disabled{opacity:.6;cursor:not-allowed}
+.secondary{min-height:39px;border-radius:10px;background:#ffffff0c;border:1px solid #ffffff2c;padding:10px 13px;font-size:12px;color:#e9e8fa}
+.controls{gap:10px;margin-top:13px}
+.controls label{font-size:12px}
+.note{font-size:11px;line-height:1.5;color:#aab1c7}
+#load{width:100%;line-height:1.2}
+#analyze{min-width:220px}
+#status{margin:18px 0 0;padding-top:13px;border-top:1px solid #ffffff13;min-height:33px;line-height:1.5}
+#engine{display:inline-flex;align-items:center;color:#b8c9d9}
+#viewer{width:100%}
+.viewer{aspect-ratio:16/9;border-radius:15px;background:#080c19;border:1px solid #ffffff12;isolation:isolate}
+.viewer img{object-fit:cover;opacity:.66}
+.shade{background:linear-gradient(180deg,#06091b05 5%,#06091b20 42%,#050612ee 100%);pointer-events:none}
+.captions{padding:18px 22px 24px;pointer-events:none;z-index:2}
+.original{font-size:clamp(18px,2vw,29px);line-height:1.22;letter-spacing:-.35px;margin-bottom:10px;text-wrap:balance}
+.translation{font-size:clamp(14px,1.22vw,19px);line-height:1.35;text-wrap:balance}
+.hero>div:nth-child(2)>.panel{padding:17px}
+.hero>div:nth-child(2) .controls{margin:14px 0 10px;gap:8px}
+.hero>div:nth-child(2)>.panel>.note{margin:13px 3px 0}
+.progress{display:block;width:100%;margin:10px 0;accent-color:#a98dff;height:6px}
+audio{border-radius:14px}
+#captions{max-width:100%}
+#player iframe{width:100%;height:100%;border:0}
+@media(min-width:1100px){.hero>div:nth-child(2){padding-top:8px}}
+@media(max-width:1020px){.hero{grid-template-columns:1fr;gap:24px}.hero>div>.panel{min-height:0}.hero>div:nth-child(2){max-width:850px;width:100%;margin:auto}h1{font-size:clamp(38px,6vw,56px)}}
+@media(max-width:600px){.shell{padding:18px 14px 40px}.top{padding-bottom:17px}.logo{font-size:21px}.pill{font-size:10px;padding:7px 9px}.hero{margin-top:22px;gap:20px}h1{font-size:clamp(35px,9vw,46px);letter-spacing:-1.6px}.muted{font-size:13px;margin-bottom:17px}.panel{padding:17px;border-radius:18px}.field{grid-template-columns:1fr}.field input{height:49px}.field button{height:44px}.hero>div:nth-child(2)>.panel{padding:10px}.viewer{aspect-ratio:16/10}.captions{padding:9px 10px 15px}.original{font-size:clamp(16px,4.6vw,23px)}.translation{font-size:clamp(13px,3.5vw,17px)}.controls{gap:8px}#analyze{min-width:0;width:100%}#engine{width:100%}}
