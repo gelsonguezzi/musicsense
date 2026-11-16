@@ -131,6 +131,33 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(status);self.send_header('Content-Type','application/json; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data)
     def do_POST(self):
         route=urlparse(self.path).path
+        if route in ('/api/download-original','/api/separate-six'):
+            try:
+                import uuid,threading
+                from youtube_support import video_id_from_url
+                size=int(self.headers.get('Content-Length','0'))
+                if size<1 or size>4096:return self.send_json({'error':'Link invalido'},400)
+                data=json.loads(self.rfile.read(size).decode('utf-8'))
+                url=str(data.get('url',''))
+                video_id_from_url(url)
+                job=uuid.uuid4().hex
+                with _EXPORT_LOCK:_EXPORT_JOBS[job]={'percent':1,'stage':'Iniciando','done':False}
+                def work():
+                    def update(pct,stage):
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(percent=pct,stage=stage)
+                    try:
+                        from features_218 import download_original,separate_six
+                        if route=='/api/download-original':
+                            output=download_original(url,CACHE,update)
+                            result={'video_url':output}
+                        else:result=separate_six(url,CACHE,update)
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(done=True,percent=100,stage='Concluido',**result)
+                    except Exception as exc:
+                        traceback.print_exc()
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(done=True,error=str(exc),stage='Falha')
+                threading.Thread(target=work,daemon=True).start()
+                return self.send_json({'job_id':job})
+            except Exception as exc:return self.send_json({'error':str(exc)},400)
         if route=='/api/export-stem-karaoke':
             try:
                 import uuid,threading
