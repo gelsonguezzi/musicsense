@@ -9,7 +9,12 @@ function renderSegment(time){
  const segs=analyzed.segments;
  const seg=segs.find(x=>time>=x.start&&time<x.end+0.35);
  if(!seg){const next=segs.find(x=>x.start>time);$('original').textContent=next&&next.start-time<1.2?'♪ '+next.original:'';$('translation').textContent='';return}
- const words=(seg.words||[]).filter(w=>w&&typeof w.text==='string');
+ const raw=(seg.words||[]).filter(w=>w&&typeof (w.text??w.word)==='string');
+ const words=raw.length?raw.map(w=>({...w,text:String(w.text??w.word)})):
+   String(seg.original||'').trim().split(/\s+/).filter(Boolean).map((text,i,arr)=>({
+    text,start:Number(seg.start)+(Number(seg.end)-Number(seg.start))*i/arr.length,
+    end:Number(seg.start)+(Number(seg.end)-Number(seg.start))*(i+1)/arr.length
+   }));
  if(words.length){
   const original=$('original');original.replaceChildren();
   let active=words.findIndex(w=>Number.isFinite(Number(w.start))&&Number.isFinite(Number(w.end))&&time>=Number(w.start)&&time<Number(w.end));

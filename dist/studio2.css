@@ -83,3 +83,7 @@ body.ipad-theater-open{overflow:hidden!important;touch-action:manipulation}
 .playerbar #saveFavorite.favorite-inline:hover{background:#f2c44e22!important;border-color:#f2c44e80!important;color:#ffe18a!important}
 .playerbar #saveFavorite.favorite-inline span{font-size:17px;line-height:1}
 @media(max-width:640px){#ytBring.btn,#ytSearchGo.youtube-red{font-size:11px!important}.playerbar #saveFavorite.favorite-inline{font-size:10px!important;padding:5px 7px!important}}
+
+/* MusicSense 221: restore visible bouncing karaoke ball */
+#viewer .original .karaoke-word{position:relative;display:inline-block;overflow:visible!important}
+#viewer .original .karaoke-word>.ball{display:block!important;position:absolute!important;top:-.95em!important;left:50%!important;width:16px!important;height:16px!important;background:#58eaff!important;border:2px solid white!important;border-radius:50%!important;z-index:90!important;box-shadow:0 0 15px #38eaff!important;animation:musicBounce .42s ease-in-out infinite alternate!important}

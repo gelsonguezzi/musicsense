@@ -243,7 +243,7 @@ class Handler(SimpleHTTPRequestHandler):
                 if size<1 or size>200000:return self.send_json({'error':'Dados invalidos'},400)
                 payload=json.loads(self.rfile.read(size).decode('utf-8'))
                 from export_video_208 import export_youtube_video
-                result=export_youtube_video(str(payload.get('url','')),payload.get('segments'),CACHE)
+                result=export_youtube_video(str(payload.get('url','')),payload.get('segments'),CACHE,str(payload.get('title','')),str(payload.get('language','en')))
                 return self.send_json({'video_url':result,'source':'youtube-video'})
             except ValueError as exc:return self.send_json({'error':str(exc)},400)
             except Exception as exc:

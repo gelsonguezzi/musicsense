@@ -7,7 +7,7 @@ window.MusicSenseExport={start:async function(mode='audio'){
  if(currentVideoId){
   setStatus(mode==='video'?'Obtendo clipe e adicionando legendas. Aguarde...':'Preparando audio e legendas. Aguarde...');
   r=await fetch(mode==='video'?'/api/export-youtube-original':'/api/export-youtube-video',
-    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:'https://www.youtube.com/watch?v='+currentVideoId,segments:analyzed.segments})});
+    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:'https://www.youtube.com/watch?v='+currentVideoId,segments:analyzed.segments,title:currentTitle||'',language:analyzed.language||'en'})});
  }else if(lastFile){
   const fd=new FormData();fd.append('file',lastFile);fd.append('segments',JSON.stringify(analyzed.segments));
   r=await fetch('/api/export-video',{method:'POST',body:fd});
