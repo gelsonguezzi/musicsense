@@ -1,0 +1,16 @@
+/* MusicSense 231: progresso de MP4 visivel no card de exportacao. */
+.ms231-export-status{grid-column:1/-1;display:grid;gap:8px;padding:12px 14px;margin:0 0 7px;background:#1a2133;border:1px solid #806bb0;border-radius:13px;color:#eef0ff;min-width:0}
+.ms231-export-status[hidden]{display:none!important}
+.ms231-status-top{display:flex;justify-content:space-between;align-items:center;gap:14px}
+.ms231-status-message{font-size:12px;line-height:1.4;font-weight:700;min-width:0;overflow-wrap:anywhere}
+.ms231-status-percent{font-size:16px;color:#e8d7ff;white-space:nowrap;font-weight:850;font-variant-numeric:tabular-nums}
+.ms231-export-status progress{width:100%;height:12px;accent-color:#ae86ed;border-radius:8px}
+.ms231-export-status progress[hidden]{display:none}
+.ms231-status-actions{display:flex;flex-wrap:wrap;gap:8px}
+.ms231-download-link{padding:9px 14px;background:#4c3e78;color:white;font-weight:800;font-size:12px;border-radius:10px;text-decoration:none}
+.ms231-download-link:hover{background:#7560a9}
+.ms231-export-status[data-status="ready"]{border-color:#389d92;background:#142e32}
+.ms231-export-status[data-status="ready"] .ms231-status-percent{color:#95ffe4}
+.ms231-export-status[data-status="error"]{border-color:#b86877;background:#36202c}
+.ms231-export-status[data-status="error"] .ms231-status-percent{color:#ffb9c7}
+@media(min-width:800px){.actiongrid:has(.ms231-export-status){align-items:stretch}}

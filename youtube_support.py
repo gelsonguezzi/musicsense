@@ -12,6 +12,40 @@ YTDLP = Path(r"C:\Yt-dlp\yt-dlp.exe") if Path(r"C:\Yt-dlp\yt-dlp.exe").is_file()
 FFMPEG = Path(r"C:\Yt-dlp") if (Path(r"C:\Yt-dlp")/"ffmpeg.exe").is_file() else Path(shutil.which("ffmpeg") or "ffmpeg").parent
 MAX_DURATION = 900
 
+def media_from_url(url):
+    """Validate a supported public clip URL and return its canonical identity."""
+    try:
+        parsed = urlparse(str(url).strip())
+        if parsed.scheme not in ("http", "https") or parsed.username or parsed.password or parsed.port:
+            raise ValueError
+    except (TypeError, ValueError):
+        raise ValueError("Use um link válido do YouTube ou Instagram.")
+    host = (parsed.hostname or "").lower()
+    parts = [part for part in parsed.path.split("/") if part]
+    if host in ("youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com"):
+        video_id = parse_qs(parsed.query).get("v", [""])[0]
+        if not re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id):
+            raise ValueError("ID de vídeo inválido.")
+        return {"platform": "youtube", "id": video_id,
+                "canonical": "https://www.youtube.com/watch?v=" + video_id,
+                "cache_id": video_id}
+    if host == "youtu.be":
+        video_id = parts[0] if parts else ""
+        if not re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id):
+            raise ValueError("ID de vídeo inválido.")
+        return {"platform": "youtube", "id": video_id,
+                "canonical": "https://www.youtube.com/watch?v=" + video_id,
+                "cache_id": video_id}
+    if host in ("instagram.com", "www.instagram.com", "m.instagram.com"):
+        kind = parts[0].lower() if parts else ""
+        shortcode = parts[1] if len(parts) > 1 else ""
+        if kind in ("p", "reel", "reels", "tv") and re.fullmatch(r"[A-Za-z0-9_-]{5,80}", shortcode):
+            kind = "reel" if kind == "reels" else kind
+            return {"platform": "instagram", "id": shortcode,
+                    "canonical": f"https://www.instagram.com/{kind}/{shortcode}/",
+                    "cache_id": "instagram_" + shortcode}
+    raise ValueError("Use o link de um vídeo do YouTube ou de um post/Reel público do Instagram.")
+
 def video_id_from_url(url):
     parsed = urlparse(url.strip())
     host = (parsed.hostname or "").lower()
@@ -95,9 +129,10 @@ def fetch_manual_captions(video_id, cache_dir):
             print('[CAPTIONS] Falha:',exc,flush=True)
             return None
 
-def fetch_audio_and_analyze(url, cache_dir, analyze_func):
+def fetch_audio_and_analyze(url, cache_dir, analyze_func, progress=None):
     video_id = video_id_from_url(url)
     cache_file = cache_dir / ("youtube_" + video_id + ".json")
+    if progress:progress(6,'Verificando musica ja analisada')
     if cache_file.exists():
         cached=json.loads(cache_file.read_text(encoding='utf-8'))
         if cached.get('karaoke_schema')==4 and len(cached.get('segments',[]))>=4:
@@ -107,6 +142,7 @@ def fetch_audio_and_analyze(url, cache_dir, analyze_func):
                 for x,pt in zip(cached['segments'],pts):x['translation']=pt
                 cached['translation_engine']=engine
                 cache_file.write_text(json.dumps(cached,ensure_ascii=False),encoding='utf-8')
+            if progress:progress(98,'Analise recuperada do cache')
             return cached
     if not YTDLP.is_file():
         raise RuntimeError("yt-dlp não encontrado no computador.")
@@ -116,6 +152,7 @@ def fetch_audio_and_analyze(url, cache_dir, analyze_func):
     title = 'Vídeo do YouTube'
     # Reutiliza áudio autorizado já baixado; não repetir download a cada ajuste.
     audio_file=cache_dir / ('youtube_'+video_id+'.mp3')
+    if progress:progress(9,'Preparando audio do YouTube')
     if not audio_file.is_file() or audio_file.stat().st_size<10000:
         with tempfile.TemporaryDirectory(prefix="musicsense_yt_") as temp:
             output = str(Path(temp) / "audio.%(ext)s")
@@ -130,11 +167,15 @@ def fetch_audio_and_analyze(url, cache_dir, analyze_func):
             if not files: raise RuntimeError("O áudio não foi criado.")
             import shutil
             shutil.copyfile(files[0],audio_file)
-    data = fetch_manual_captions(video_id,cache_dir) or analyze_func(str(audio_file), None)
+    if progress:progress(12,'Iniciando analise e traducao')
+    manual=fetch_manual_captions(video_id,cache_dir)
+    data = manual or analyze_func(str(audio_file), None, progress=progress)
+    if manual and progress:progress(90,'Legendas existentes localizadas')
     data['karaoke_schema']=4
     data["video_id"] = video_id
     data["title"] = title if title != 'Vídeo do YouTube' else 'YouTube • '+video_id
     data["artist"] = info.get('artist') or info.get('uploader') or ''
     data["duration"] = duration
     cache_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    if progress:progress(99,'Guardando analise')
     return data

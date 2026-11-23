@@ -78,7 +78,28 @@ def download_original(url,cache,progress=None):
         if progress:progress(99,'MP4 compativel pronto para salvar')
         return '/cache/'+output.name
 
-def separate_six(url,cache,progress=None):
+def separate_six(url,cache,progress=None,quality='standard'):
+    import json
+    vid=video_id_from_url(url)
+    manifest=cache/('youtube_'+vid+('_stems6_hq.json' if quality=='high' else '_stems6.json'))
+    # Se o modo reforcado ja foi concluido em outro momento, reutiliza-o,
+    # sem processamento extra, mesmo quando o usuario escolhe o modo rapido.
+    candidates=[manifest]
+    if quality=='standard':
+        candidates.append(cache/('youtube_'+vid+'_stems6_hq.json'))
+    for candidate in candidates:
+        if candidate.is_file():
+            try:
+                tracks=json.loads(candidate.read_text(encoding='utf-8'))['tracks']
+                expected={'vocals','drums','bass','guitar','piano','other'}
+                if (isinstance(tracks,dict) and set(tracks)==expected
+                    and all(isinstance(path,str) and path.startswith('/cache/musicsense_stem_')
+                        and (cache/Path(path).name).is_file()
+                        and (cache/Path(path).name).stat().st_size>10000
+                        for path in tracks.values())):
+                    if progress:progress(98,'Trilhas prontas no cache; sem nova separacao')
+                    return {'tracks':tracks}
+            except (OSError,ValueError,KeyError,TypeError):pass
     py=Path(__file__).parent/'.venv_demucs'/'Scripts'/'python.exe'
     if not py.is_file():raise RuntimeError('Demucs nao instalado')
     if progress:progress(5,'Obtendo audio')
@@ -86,9 +107,48 @@ def separate_six(url,cache,progress=None):
     with tempfile.TemporaryDirectory(prefix='ms_6stems_') as tmp:
         if progress:progress(15,'Separando seis trilhas com IA. Pode levar varios minutos')
         cmd=[str(py),str(Path(__file__).parent/'demucs_compat_214.py'),'-n','htdemucs_6s','-o',tmp,str(audio)]
-        try:r=subprocess.run(cmd,capture_output=True,text=True,timeout=3600)
-        except subprocess.TimeoutExpired:raise RuntimeError('Separacao excedeu 60 minutos')
-        if r.returncode:raise RuntimeError('Demucs 6 trilhas: '+(r.stderr or r.stdout)[-700:])
+        if quality=='high':cmd[2:2]=['--shifts','2','--overlap','0.5']
+        # Demucs publica andamento por etapas no stderr. Nao inventar progresso.
+        import time, threading
+        state={'percent':15,'stage':'IA preparando os instrumentos'}
+        def monitor():
+            while not state.get('done'):
+                if progress:progress(state['percent'],state['stage'])
+                time.sleep(4)
+        watcher=threading.Thread(target=monitor,daemon=True);watcher.start()
+        try:
+            proc=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,
+                                  text=True,errors='replace',bufsize=1)
+            logs=[];start=time.monotonic()
+            passes=2 if quality=='high' else 1
+            completed=0
+            last_step=0
+            # stderr do tqdm usa retorno de carro, nao somente quebra de linha.
+            while True:
+                line=proc.stdout.readline()
+                if not line and proc.poll() is not None:break
+                if not line:continue
+                logs.append(line.strip())
+                if len(logs)>80:logs.pop(0)
+                found=re.search(r'(\d{1,3})%\s*\|',line)
+                if found:
+                    step=min(100,int(found.group(1)))
+                    # O indicador reflete a etapa de calculo do Demucs.
+                    if step<last_step-30 and completed<passes-1:
+                        completed+=1
+                    last_step=step
+                    state['stage']='IA separando trilhas: passagem '+str(completed+1)+'/'+str(passes)+' ('+str(step)+'%)'
+                    fraction=min(1,(completed+step/100)/passes)
+                    state['percent']=max(state['percent'],15+int(fraction*44))
+                if time.monotonic()-start>3600:
+                    proc.kill();raise RuntimeError('Separacao excedeu 60 minutos')
+            if proc.wait(timeout=30):
+                raise RuntimeError('Demucs 6 trilhas: '+' '.join(logs)[-700:])
+            state['percent']=65;state['stage']='IA finalizada; convertendo trilhas'
+            if progress:progress(65,'IA finalizada; convertendo trilhas')
+        finally:
+            state['done']=True
+            if 'proc' in locals() and proc.poll() is None:proc.kill()
         base=Path(tmp)/'htdemucs_6s'/audio.stem
         tracks={}
         names=['vocals','drums','bass','guitar','piano','other']
@@ -96,8 +156,9 @@ def separate_six(url,cache,progress=None):
             src=base/(name+'.wav')
             if not src.is_file():raise RuntimeError('Trilha ausente: '+name)
             out=cache/('musicsense_stem_'+name+'_'+uuid.uuid4().hex[:10]+'.mp3')
-            conv=subprocess.run([str(Path(FFMPEG)/'ffmpeg.exe'),'-hide_banner','-loglevel','error','-y','-i',str(src),'-codec:a','libmp3lame','-q:a','3',str(out)],capture_output=True,text=True,timeout=300)
+            conv=subprocess.run([str(Path(FFMPEG)/'ffmpeg.exe'),'-hide_banner','-loglevel','error','-y','-i',str(src),'-codec:a','libmp3lame','-q:a',('0' if quality=='high' else '3'),str(out)],capture_output=True,text=True,timeout=300)
             if conv.returncode:raise RuntimeError('Falha ao gerar '+name+': '+conv.stderr[-200:])
             tracks[name]='/cache/'+out.name
             if progress:progress(65+int((i+1)*30/6),'Preparando trilha '+name)
+        manifest.write_text(json.dumps({'tracks':tracks},ensure_ascii=False),encoding='utf-8')
         return {'tracks':tracks}

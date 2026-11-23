@@ -24,5 +24,3 @@ if errorlevel 1 (
 echo.
 echo Publicado em https://musicsense.netlify.app
 pause
-
-[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]

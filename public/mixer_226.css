@@ -1,0 +1,57 @@
+/* MusicSense 226 - duas colunas em PC, uma coluna em smartphone. */
+dialog.ms226{
+ width:min(1180px,calc(100vw - 30px))!important;
+ max-width:1180px!important;
+ max-height:calc(100dvh - 24px);
+ background:#0b0e18;
+ padding:clamp(14px,2vw,25px);
+}
+.ms226 .mixer-tracks{
+ display:grid!important;
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ gap:12px 16px!important;
+ align-items:stretch;
+}
+.ms226 .ms224-row{
+ display:grid!important;
+ grid-template-columns:minmax(106px,1fr) 42px 42px minmax(78px,1.2fr) 86px!important;
+ grid-template-rows:auto!important;
+ min-width:0;
+ gap:6px!important;
+ padding:10px!important;
+}
+.ms226 .ms224-row>button{min-width:0}
+.ms226 .ms224-toggle{
+ overflow-wrap:anywhere;text-align:left;
+ font-size:13px!important;
+}
+.ms226 .ms226-note{
+ font-size:12px;color:#bbb5db;
+ line-height:1.45;margin:8px 0 0;
+}
+.ms226 .ms224-hint{
+ font-size:11px;
+ margin:8px 0;
+}
+.ms226 .mixer-controls{margin:12px 0!important}
+.ms226 .ms224-clock{margin:8px 0}
+@media (max-width:920px){
+ .ms226 .mixer-tracks{
+  grid-template-columns:1fr!important;
+ }
+ dialog.ms226{width:min(690px,calc(100vw - 20px))!important;}
+}
+@media (max-width:630px){
+ dialog.ms226{padding:14px!important}
+ .ms226 .ms224-row{
+  grid-template-columns:minmax(110px,1fr) 44px 44px 85px!important;
+  grid-template-rows:auto auto!important;
+  padding:11px!important;
+  gap:8px!important;
+ }
+ .ms226 .ms224-row input[type=range]{
+  grid-column:1/-1!important;grid-row:2!important;
+  width:100%;margin:3px 0!important;
+ }
+ .ms226 .ms224-toggle{font-size:14px!important}
+}

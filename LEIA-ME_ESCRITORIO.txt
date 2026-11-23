@@ -29,5 +29,3 @@ Legendas sao geradas por IA e podem conter erros.
 Exportacao MP4 e para arquivos locais autorizados.
 PDF com acordes requer acordes inseridos manualmente.
 A rede local do escritorio nao expoe automaticamente o app ao celular.
-
-[executed on device: ESCRITORIO (015f09d9-8ae6-4cef-a39b-c7592204d204)]

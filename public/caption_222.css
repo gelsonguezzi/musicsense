@@ -1,0 +1,49 @@
+/* MusicSense 222: +20% nas legendas, reajuste para caber e bolinha animada. */
+#viewer .captions{max-width:100%;box-sizing:border-box;overflow:visible}
+#viewer .original,#viewer .translation{
+  overflow-wrap:anywhere;word-break:normal;max-width:100%;
+  width:100%;box-sizing:border-box;
+}
+#viewer .original{font-size:clamp(20.4px,1.98vw,30px)!important}
+#viewer .translation{font-size:clamp(15.6px,1.344vw,20.4px)!important}
+#viewer .original .karaoke-word{position:relative;overflow:visible!important}
+#viewer .original .karaoke-word>.ball{
+  display:block!important;position:absolute!important;
+  top:-.64em!important;left:50%!important;
+  width:clamp(12px,1.35vw,19px)!important;height:clamp(12px,1.35vw,19px)!important;
+  background:#64edff!important;border:2px solid #fff!important;
+  box-shadow:0 0 12px 3px #3bdbffb8!important;z-index:100!important;
+  border-radius:50%!important;
+  animation:musicSenseLeap222 .48s cubic-bezier(.34,.04,.58,1) infinite alternate!important;
+  pointer-events:none;
+}
+@keyframes musicSenseLeap222{
+  0%{transform:translate(-50%,-2px) scale(.88)}
+  100%{transform:translate(-50%,-.75em) scale(1.12)}
+}
+#viewer:fullscreen .original,
+#viewer:-webkit-full-screen .original,
+#viewer.ipad-theater .original{
+  font-size:clamp(35px,5.1vw,85px)!important;
+}
+#viewer:fullscreen .translation,
+#viewer:-webkit-full-screen .translation,
+#viewer.ipad-theater .translation{
+  font-size:clamp(35px,5.1vw,85px)!important;
+}
+#viewer:fullscreen .original .ball,
+#viewer:-webkit-full-screen .original .ball,
+#viewer.ipad-theater .original .ball{
+  width:clamp(20px,2.6vw,43px)!important;height:clamp(20px,2.6vw,43px)!important;
+}
+@media(max-width:640px){
+  #viewer .original{font-size:clamp(18px,4.8vw,25.2px)!important}
+  #viewer .translation{font-size:clamp(14.4px,3.84vw,19.2px)!important}
+  #viewer .captions{padding:16px 12px 10px!important}
+  #viewer:fullscreen .original,#viewer:-webkit-full-screen .original,#viewer.ipad-theater .original{
+    font-size:clamp(26px,5.1vw,52px)!important;
+  }
+  #viewer:fullscreen .translation,#viewer:-webkit-full-screen .translation,#viewer.ipad-theater .translation{
+    font-size:clamp(26px,5.1vw,52px)!important;
+  }
+}

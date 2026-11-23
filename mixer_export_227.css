@@ -1,0 +1,34 @@
+/* MusicSense 227, exportacao e efeitos da mesa */
+.ms227-options{display:flex;flex-wrap:wrap;gap:10px 14px;margin:5px 0 10px;align-items:flex-end}
+.ms227-option{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#e3dafa;min-width:0}
+.ms227-option select{background:#22283a;color:#fff;border:1px solid #8e79c880;border-radius:9px;padding:9px 10px;max-width:240px}
+.ms227-fx{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 12px;background:#191e30;border-radius:10px;color:#ded7fa;font-size:12px}
+.ms227-check{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.ms227-check input{accent-color:#ab86f5}
+.ms227-help{font-size:11px;color:#abb6d2;line-height:1.5;margin:9px 2px}
+.ms227-job{margin:8px 0 15px}
+.ms227-job[hidden]{display:none!important}
+.ms226 .mixer-controls{align-items:center;gap:8px}
+.ms226 .mixer-controls button{white-space:normal}
+@media(max-width:620px){
+ .ms227-options{display:grid;grid-template-columns:1fr 1fr}
+ .ms227-option{display:flex;align-items:stretch;flex-direction:column}
+ .ms227-option select{font-size:12px;width:100%;max-width:none}
+ .ms226 .mixer-controls button{font-size:11px;padding:10px}
+}
+
+/* Compactacao para cinco linhas de instrumentos em cada coluna. */
+@media(min-width:921px){
+ dialog.ms226{padding:16px 22px!important}
+ .ms226 h2{margin:0 0 5px!important;font-size:21px!important}
+ .ms226 p{margin:5px 0!important}
+ .ms226 .ms224-hint{padding:7px 9px!important}
+ .ms226 .mixer-controls{margin:8px 0!important}
+ .ms226 .mixer-tracks{gap:7px 12px!important;margin-top:8px!important}
+ .ms226 .ms224-row{padding:7px 9px!important;min-height:52px!important}
+ .ms226 .ms224-toggle{min-height:36px!important}
+ .ms226 .ms224-clock{margin:5px 0!important}
+ .ms227-options{margin:4px 0 5px!important}
+ .ms227-fx{padding:6px 10px!important}
+ .ms227-help{margin:4px 0!important}
+}

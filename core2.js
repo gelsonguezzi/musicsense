@@ -4,29 +4,50 @@ const demo=[['A música começa aqui','Sua tradução aparece junto com a letra'
 function setStatus(s){$('status').textContent=s}
 function draw(){if(analyzed)return;$('original').textContent=demo[0][0];$('translation').textContent=demo[0][1]}
 function renderTranslation(seg,time){const el=$('translation'),str=seg.translation||'Tradução indisponível';const pt=str.trim().split(/\s+/).filter(Boolean);const en=(seg.words||[]).filter(w=>Number.isFinite(w.start));if(!pt.length){el.textContent='';return}if(!en.length){el.textContent=str;return}const n=Math.min(pt.length,Math.round(pt.length*en.filter(w=>time>=w.start).length/en.length));el.replaceChildren();pt.forEach((w,i)=>{const s=document.createElement('span');s.className=i<n?'pt-active':'pt-pending';s.textContent=w+(i<pt.length-1?' ':'');el.append(s)})}
+// MusicSense 222: conserva os mesmos elementos para a bolinha completar o salto.
+const karaokeFrame={segment:null,words:[],elements:[],dot:null};
 function renderSegment(time){
  if(!analyzed||!Array.isArray(analyzed.segments))return;
- const segs=analyzed.segments;
- const seg=segs.find(x=>time>=x.start&&time<x.end+0.35);
- if(!seg){const next=segs.find(x=>x.start>time);$('original').textContent=next&&next.start-time<1.2?'♪ '+next.original:'';$('translation').textContent='';return}
- const raw=(seg.words||[]).filter(w=>w&&typeof (w.text??w.word)==='string');
- const words=raw.length?raw.map(w=>({...w,text:String(w.text??w.word)})):
+ const segs=window.MusicSenseView225?.segments(analyzed)||analyzed.segments;
+ const seg=segs.find(x=>time>=Number(x.start)&&time<Number(x.end)+.35);
+ if(!seg){
+  karaokeFrame.segment=null;karaokeFrame.words=[];karaokeFrame.elements=[];karaokeFrame.dot=null;
+  const next=segs.find(x=>Number(x.start)>time);
+  $('original').textContent=next&&Number(next.start)-time<1.2?'♪ '+next.original:'';
+  $('translation').textContent='';
+  return;
+ }
+ if(karaokeFrame.segment!==seg){
+  const raw=(seg.words||[]).filter(w=>w&&typeof (w.text??w.word)==='string');
+  const words=raw.length?raw.map(w=>({...w,text:String(w.text??w.word)})):
    String(seg.original||'').trim().split(/\s+/).filter(Boolean).map((text,i,arr)=>({
     text,start:Number(seg.start)+(Number(seg.end)-Number(seg.start))*i/arr.length,
     end:Number(seg.start)+(Number(seg.end)-Number(seg.start))*(i+1)/arr.length
    }));
- if(words.length){
-  const original=$('original');original.replaceChildren();
-  let active=words.findIndex(w=>Number.isFinite(Number(w.start))&&Number.isFinite(Number(w.end))&&time>=Number(w.start)&&time<Number(w.end));
-  if(active<0){active=words.findIndex((w,i)=>time>=Number(w.start||0)&&(i===words.length-1||time<Number(words[i+1].start||0)))}
-  words.forEach((w,i)=>{
-   const span=document.createElement('span');span.className='karaoke-word'+(time>=Number(w.start||0)?' active':'');
-   span.textContent=w.text.trim()+' ';
-   if($('ball').checked&&i===active){const dot=document.createElement('span');dot.className='ball';dot.setAttribute('aria-hidden','true');span.append(dot)}
-   original.append(span);
+  karaokeFrame.segment=seg;karaokeFrame.words=words;karaokeFrame.elements=[];karaokeFrame.dot=null;
+  const frag=document.createDocumentFragment();
+  words.forEach(w=>{
+   const span=document.createElement('span');
+   span.className='karaoke-word';span.textContent=w.text.trim()+' ';
+   karaokeFrame.elements.push(span);frag.append(span);
   });
- }else{$('original').textContent=seg.original}
- renderTranslation(seg,time)
+  const original=$('original');original.replaceChildren();
+  if(words.length)original.append(frag);else original.textContent=seg.original||'';
+ }
+ const words=karaokeFrame.words;
+ let active=words.findIndex(w=>Number.isFinite(Number(w.start))&&Number.isFinite(Number(w.end))&&time>=Number(w.start)&&time<Number(w.end));
+ if(active<0){
+  for(let i=0;i<words.length;i++)if(time>=Number(words[i].start))active=i;
+ }
+ if(active<0&&words.length)active=0;
+ karaokeFrame.elements.forEach((span,i)=>span.classList.toggle('active',time>=Number(words[i].start)));
+ const target=active>=0?karaokeFrame.elements[active]:null;
+ if(target){
+  const next=words[active+1];
+  const until=next?Math.max(.12,Number(next.start)-time):Math.max(.2,Number(seg.end)-time);
+  window.MusicSenseBall223?.target(target,until);
+ }
+ renderTranslation(seg,time);
 }
 function setMediaMode(mode){sourceMode=mode;const video=$('video'),audio=$('audio');if(mode==='local-video'){video.style.display='block';audio.style.display='none';$('poster').style.display='none'}else if(mode==='local-audio'){video.style.display='none';audio.style.display='block';$('poster').style.display='block'}else if(mode==='youtube'){video.style.display='none';audio.style.display='none';$('poster').style.display='none'}else{video.style.display='none';audio.style.display='none';$('poster').style.display='block'}}
 function localTime(){if(sourceMode==='youtube'&&typeof ytPlayer!=='undefined'&&ytPlayer&&typeof ytPlayer.getCurrentTime==='function'){try{return ytPlayer.getCurrentTime()||0}catch{}}return activeMedia?activeMedia.currentTime:0}
@@ -58,5 +79,5 @@ $('viewer').addEventListener('touchend',e=>{
   if(now-lastTouchTap<340){e.preventDefault();lastTouchTap=0;fullScreen()}else lastTouchTap=now;
 },{passive:false});$('fullscreen').onclick=fullScreen;$('viewer').addEventListener('dblclick',fullScreen);
 $('next').addEventListener('click',()=>{if(!analyzed)return setStatus('Analise uma música primeiro.');const next=analyzed.segments.find(x=>x.start>localTime()+.15);if(next){if(sourceMode==='youtube'&&typeof ytPlayer!=='undefined'&&ytPlayer?.seekTo)ytPlayer.seekTo(next.start,true);else if(activeMedia)activeMedia.currentTime=next.start;setStatus('Próxima frase.')}});
-$('repeatLine').onclick=()=>{if(!analyzed?.segments?.length)return setStatus('Primeiro analise uma música para repetir frases.');const time=localTime();const seg=analyzed.segments.find(x=>time>=x.start&&time<x.end+.35)||analyzed.segments.filter(x=>x.start<=time).at(-1)||analyzed.segments[0];if(!seg)return;const target=Math.max(0,seg.start);if(sourceMode==='youtube'&&typeof ytPlayer!=='undefined'&&ytPlayer?.seekTo){ytPlayer.seekTo(target,true);ytPlayer.playVideo?.()}else if(activeMedia){activeMedia.currentTime=target;activeMedia.play?.().catch(()=>{})}else return setStatus('Carregue o áudio ou vídeo antes de repetir.');renderSegment(target);setStatus('Repetindo frase a partir de '+Math.floor(target/60)+':'+String(Math.floor(target%60)).padStart(2,'0')+'.')};
+
 draw();checkEngine();

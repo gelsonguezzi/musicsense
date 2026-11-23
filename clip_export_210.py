@@ -4,6 +4,7 @@ from pathlib import Path
 from email.parser import BytesParser
 from email.policy import default
 from studio_export import make_ass
+from cover_card_222 import _wrap_caption
 from youtube_support import fetch_audio_for_playback
 FF=Path(r'C:\Yt-dlp\ffmpeg.exe')
 FP=Path(r'C:\Yt-dlp\ffprobe.exe')
@@ -96,7 +97,17 @@ def export(content_type,body,cache,progress=None):
         concat.write_text(''.join("file '"+str(f).replace('\\','/')+"'\n" for f in clips),encoding='utf-8')
         ass=root/'captions.ass'
         text=make_ass(segments).replace('PlayResX: 720',f'PlayResX: {w}').replace('PlayResY: 900',f'PlayResY: {h}')
-        ass.write_text(text,encoding='utf-8-sig')
+        fitted=[]
+        for event in text.splitlines():
+            if event.startswith('Dialogue: '):
+                parts=event.split(',',9)
+                if len(parts)==10:
+                    size=32 if parts[3]=='English' else 26
+                    wrapped,new_size=_wrap_caption(parts[9],int(w*.78),size)
+                    parts[9]=r'{\fs'+str(new_size)+'}'+wrapped
+                    event=','.join(parts)
+            fitted.append(event)
+        ass.write_text('\n'.join(fitted)+'\n',encoding='utf-8-sig')
         report(77,"Preparando audio e legendas")
         audio=None
         if settings.get('youtube_url'):

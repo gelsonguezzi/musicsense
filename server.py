@@ -40,7 +40,7 @@ def get_model():
             print('[IA] Modelo pronto em %.1fs'%(time.monotonic()-start),flush=True)
     return _MODEL
 
-def analyze(filepath, language):
+def analyze(filepath, language, progress=None):
     # Compatibilidade com PyAV 19: faster-whisper passa metadata_errors,
     # argumento que esta versao do PyAV nao aceita.
     import av
@@ -54,8 +54,19 @@ def analyze(filepath, language):
     with _ANALYZE_LOCK:
         start=time.monotonic()
         model=get_model()
+        if progress:progress(14,'Modelo de IA carregado; iniciando transcricao')
         segments,info=model.transcribe(str(filepath),language=language or None,word_timestamps=True,vad_filter=False,beam_size=4,best_of=3,condition_on_previous_text=False,initial_prompt=None,no_speech_threshold=0.65,compression_ratio_threshold=2.2)
-        segments=list(segments)
+        transcribed=[]
+        previous_pct=14
+        for part in segments:
+            transcribed.append(part)
+            duration=float(info.duration or 0)
+            if duration>0 and progress:
+                pct=min(84,14+int(70*float(part.end)/duration))
+                if pct>previous_pct:
+                    previous_pct=pct;progress(pct,'Transcrevendo audio: '+str(int(100*float(part.end)/duration))+'% da musica')
+        segments=transcribed
+        if progress:progress(86,'Preparando frases e tempos de cada palavra')
         print('[IA] Transcricao em %.1fs'%(time.monotonic()-start),flush=True)
     # Frases de karaoke: usar os tempos REAIS das palavras, nunca frases enormes.
     # O VAD desativado preserva a voz cantada que antes era descartada.
@@ -87,8 +98,10 @@ def analyze(filepath, language):
         if g[1]>g[0]:cleaned.append(g)
     groups=cleaned
     texts=[g[2] for g in groups]
+    if progress:progress(90,'Traduzindo as frases para portugues')
     translations,engine=translate_lines(texts,info.language)
     output=[{'start':a,'end':b,'original':txt,'translation':translations[i], 'words':ws} for i,(a,b,txt,ws) in enumerate(groups)]
+    if progress:progress(99,'Finalizando legendas sincronizadas')
     return {'language':info.language,'translation_engine':engine,'segments':output,'audio_duration':round(info.duration or 0,2)}
 
 _EXPORT_JOBS={}
@@ -96,9 +109,9 @@ _EXPORT_LOCK=__import__('threading').Lock()
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self,*a,**kw): super().__init__(*a,directory=str(ROOT),**kw)
-    def search_youtube(self,query):
+    def search_youtube(self,query,limit=40):
         import subprocess
-        cmd=[str(Path(r'C:\Yt-dlp\yt-dlp.exe') if Path(r'C:\Yt-dlp\yt-dlp.exe').is_file() else (__import__('shutil').which('yt-dlp') or 'yt-dlp')),'--ignore-config','--flat-playlist','--dump-single-json','--no-warnings','--skip-download','ytsearch15:'+query]
+        cmd=[str(Path(r'C:\Yt-dlp\yt-dlp.exe') if Path(r'C:\Yt-dlp\yt-dlp.exe').is_file() else (__import__('shutil').which('yt-dlp') or 'yt-dlp')),'--ignore-config','--flat-playlist','--dump-single-json','--no-warnings','--skip-download','ytsearch'+str(limit)+':'+query]
         r=subprocess.run(cmd,capture_output=True,text=True,timeout=35)
         if r.returncode:raise RuntimeError((r.stderr or 'Busca indisponível')[-250:])
         data=json.loads(r.stdout)
@@ -107,7 +120,7 @@ class Handler(SimpleHTTPRequestHandler):
             if not item:continue
             vid=item.get('id','')
             if not re.fullmatch('[A-Za-z0-9_-]{11}',vid):continue
-            videos.append({'id':vid,'title':item.get('title') or 'Vídeo do YouTube','channel':item.get('channel') or item.get('uploader') or '', 'duration':item.get('duration')})
+            videos.append({'id':vid,'title':item.get('title') or 'Vídeo do YouTube','channel':item.get('channel') or item.get('uploader') or '', 'duration':item.get('duration'),'views':item.get('view_count') if isinstance(item.get('view_count'),int) else None})
         return videos
 
     def do_GET(self):
@@ -122,7 +135,10 @@ class Handler(SimpleHTTPRequestHandler):
             from urllib.parse import parse_qs
             query=parse_qs(urlparse(self.path).query).get('q',[''])[0].strip()
             if not 2<=len(query)<=100:return self.send_json({'error':'Informe um artista ou música (2 a 100 caracteres).'},400)
-            try:return self.send_json({'videos':self.search_youtube(query)})
+            try:
+                limit=int(parse_qs(urlparse(self.path).query).get('limit',['40'])[0])
+                limit=max(40,min(120,40*((limit+39)//40)))
+                return self.send_json({'videos':self.search_youtube(query,limit),'limit':limit})
             except Exception as exc:return self.send_json({'error':'Busca indisponível: '+str(exc)},502)
 
         return super().do_GET()
@@ -131,26 +147,269 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(status);self.send_header('Content-Type','application/json; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data)
     def do_POST(self):
         route=urlparse(self.path).path
-        if route in ('/api/download-original','/api/separate-six'):
+        if route=='/api/lead-backing-start':
             try:
                 import uuid,threading
+                size=int(self.headers.get('Content-Length','0'))
+                if not 0<size<=4096:
+                    return self.send_json({'error':'Link invalido'},400)
+                request=json.loads(self.rfile.read(size).decode('utf-8'))
+                url=str(request.get('url','')) if isinstance(request,dict) else ''
                 from youtube_support import video_id_from_url
+                video_id_from_url(url)
+                job=uuid.uuid4().hex
+                with _EXPORT_LOCK:
+                    _EXPORT_JOBS[job]={'percent':1,'stage':'Preparando canais vocais','done':False}
+                def work():
+                    def report(percent,stage):
+                        with _EXPORT_LOCK:
+                            _EXPORT_JOBS[job].update(percent=int(percent),stage=str(stage))
+                    try:
+                        from vocal_split_229 import separate
+                        result=separate(url,CACHE,report)
+                        with _EXPORT_LOCK:
+                            _EXPORT_JOBS[job].update(done=True,percent=100,
+                                stage='Voz principal e backing vocais prontos',**result)
+                    except Exception as exc:
+                        traceback.print_exc()
+                        with _EXPORT_LOCK:
+                            _EXPORT_JOBS[job].update(done=True,
+                                stage='A separacao original continua disponivel',error=str(exc))
+                threading.Thread(target=work,daemon=True).start()
+                return self.send_json({'job_id':job})
+            except Exception as exc:
+                return self.send_json({'error':str(exc)},400)
+        if route=='/api/mixer-export-start':
+            try:
+                import uuid,threading
+                size=int(self.headers.get('Content-Length','0'))
+                if not 0<size<=300000:
+                    return self.send_json({'error':'Pedido de exportacao muito grande'},413)
+                request=json.loads(self.rfile.read(size).decode('utf-8'))
+                if not isinstance(request,dict):
+                    return self.send_json({'error':'Dados invalidos'},400)
+                from mixer_export_227 import selected
+                selected(request,CACHE)
+                if request.get('mode') not in ('zip','mp4'):
+                    return self.send_json({'error':'Escolha ZIP ou MP4'},400)
+                job=uuid.uuid4().hex
+                with _EXPORT_LOCK:
+                    _EXPORT_JOBS[job]={'percent':1,'stage':'Iniciando mixagem','done':False}
+                def work():
+                    def update(percent,stage):
+                        with _EXPORT_LOCK:
+                            current=_EXPORT_JOBS[job]
+                            current['percent']=max(current.get('percent',0),int(percent))
+                            current['stage']=str(stage)
+                    try:
+                        from mixer_export_227 import export
+                        result=export(request,CACHE,update)
+                        with _EXPORT_LOCK:
+                            _EXPORT_JOBS[job].update(done=True,percent=100,
+                                stage='Arquivo pronto',file_url=result['url'],
+                                filename=result['filename'])
+                    except Exception as exc:
+                        traceback.print_exc()
+                        with _EXPORT_LOCK:
+                            _EXPORT_JOBS[job].update(done=True,stage='Erro na exportacao',
+                                error=str(exc))
+                threading.Thread(target=work,daemon=True).start()
+                return self.send_json({'job_id':job})
+            except Exception as exc:
+                return self.send_json({'error':str(exc)},400)
+        if route=='/api/social-export-start':
+            try:
+                import uuid,threading
+                size=int(self.headers.get('Content-Length','0'))
+                if not 0<size<=250000:
+                    return self.send_json({'error':'Pedido de exportacao invalido'},413)
+                data=json.loads(self.rfile.read(size).decode('utf-8'))
+                if not isinstance(data,dict):raise ValueError('Parametros invalidos')
+                from youtube_support import media_from_url
+                media_from_url(str(data.get('url','')))
+                if data.get('preset') not in ('reels','feed','square','original'):
+                    raise ValueError('Formato nao suportado')
+                if data.get('background') not in ('blur','blue','dark'):
+                    raise ValueError('Fundo invalido')
+                if data.get('placement') not in ('below','overlay'):
+                    raise ValueError('Legendas: posicao invalida')
+                lyrics=data.get('with_lyrics')
+                if type(lyrics) is not bool:raise ValueError('Modo de video invalido')
+                job=uuid.uuid4().hex
+                with _EXPORT_LOCK:
+                    _EXPORT_JOBS[job]={'done':False,'percent':1,'stage':'Preparando exportacao'}
+                def work():
+                    def report(p,s):
+                        with _EXPORT_LOCK:
+                            _EXPORT_JOBS[job].update(percent=int(p),stage=str(s))
+                    try:
+                        from social_export_232 import render
+                        result=render(str(data['url']),CACHE,preset=data['preset'],
+                            with_lyrics=lyrics,segments=data.get('segments'),
+                            background=data['background'],placement=data['placement'],
+                            progress=report)
+                        with _EXPORT_LOCK:
+                            _EXPORT_JOBS[job].update(done=True,percent=100,
+                               stage='MP4 pronto',video_url=result)
+                    except Exception as exc:
+                        traceback.print_exc()
+                        with _EXPORT_LOCK:
+                            _EXPORT_JOBS[job].update(done=True,stage='Falha na exportacao',
+                                error=str(exc))
+                threading.Thread(target=work,daemon=True).start()
+                return self.send_json({'job_id':job})
+            except Exception as exc:
+                return self.send_json({'error':str(exc)},400)
+        if route=='/api/export-video-start':
+            try:
+                import uuid,threading
+                length=int(self.headers.get('Content-Length','0'))
+                if not 0<length<=101*1024*1024:
+                    return self.send_json({'error':'Dados da exportacao excedem o limite'},413)
+                content_type=self.headers.get('Content-Type','')
+                payload=self.rfile.read(length)
+                is_form=content_type.lower().startswith('multipart/form-data')
+                if not is_form:
+                    request=json.loads(payload.decode('utf-8'))
+                    from youtube_support import video_id_from_url
+                    video_id_from_url(str(request.get('url','')))
+                    segments=request.get('segments')
+                    if not isinstance(segments,list) or not 1<=len(segments)<=500:
+                        return self.send_json({'error':'Legendas invalidas'},400)
+                    mode=request.get('mode','video')
+                    if mode not in ('video','audio'):
+                        return self.send_json({'error':'Modo de exportacao invalido'},400)
+                job=uuid.uuid4().hex
+                with _EXPORT_LOCK:_EXPORT_JOBS[job]={'percent':1,'stage':'Preparando exportacao','done':False}
+                def work():
+                    def report(pct,stage):
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(
+                            percent=max(int(pct),_EXPORT_JOBS[job].get('percent',0)),stage=str(stage))
+                    try:
+                        if is_form:
+                            from studio_export import export_multipart
+                            output=export_multipart(content_type,payload,CACHE,progress=report)
+                        elif mode=='video':
+                            from export_video_208 import export_youtube_video
+                            output=export_youtube_video(str(request['url']),segments,CACHE,
+                                str(request.get('title','')),str(request.get('language','en')),progress=report)
+                        else:
+                            from youtube_support import fetch_audio_for_playback
+                            from studio_export import export_multipart
+                            report(5,'Preparando audio do YouTube')
+                            audio=fetch_audio_for_playback(str(request['url']),CACHE)
+                            if audio.stat().st_size>100*1024*1024:raise ValueError('Audio excede 100 MB')
+                            boundary='musicsense'+uuid.uuid4().hex
+                            def field(name,blob,filename=None):
+                                hdr=('--'+boundary+'\r\nContent-Disposition: form-data; name="'+name+'"'
+                                     +('; filename="'+filename+'"' if filename else '')
+                                     +'\r\nContent-Type: application/octet-stream\r\n\r\n')
+                                return hdr.encode()+blob+b'\r\n'
+                            body=field('file',audio.read_bytes(),audio.name)+field(
+                                'segments',json.dumps(segments,ensure_ascii=False).encode())+(
+                                '--'+boundary+'--\r\n').encode()
+                            output=export_multipart('multipart/form-data; boundary='+boundary,body,CACHE,progress=report)
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(
+                            done=True,percent=100,stage='MP4 pronto',video_url=output)
+                    except Exception as exc:
+                        traceback.print_exc()
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(
+                            done=True,error=str(exc),stage='Falha na exportacao')
+                threading.Thread(target=work,daemon=True).start()
+                return self.send_json({'job_id':job})
+            except Exception as exc:
+                traceback.print_exc()
+                return self.send_json({'error':str(exc)},400)
+        if route in ('/api/youtube-start','/api/analyze-start'):
+            try:
+                import uuid,threading
+                length=int(self.headers.get('Content-Length','0'))
+                maximum=4096 if route=='/api/youtube-start' else 101*1024*1024
+                if not 0<length<=maximum:return self.send_json({'error':'Tamanho de requisicao invalido'},413)
+                content_type=self.headers.get('Content-Type','')
+                payload=self.rfile.read(length)
+                if route=='/api/youtube-start':
+                    from youtube_support import video_id_from_url
+                    request=json.loads(payload.decode('utf-8'))
+                    url=str(request.get('url',''))
+                    video_id_from_url(url)
+                else:
+                    if not content_type.lower().startswith('multipart/form-data'):
+                        return self.send_json({'error':'Envie audio multipart/form-data'},400)
+                    form=BytesParser(policy=default).parsebytes(
+                        f'MIME-Version: 1.0\r\nContent-Type: {content_type}\r\n\r\n'.encode('utf-8')+payload)
+                    part=next((p for p in form.iter_parts()
+                              if p.get_param('name',header='content-disposition')=='file'),None)
+                    if part is None or not part.get_filename():
+                        return self.send_json({'error':'Arquivo de audio ausente'},400)
+                    extension=Path(str(part.get_filename())).suffix.lower()
+                    if extension not in ('.mp3','.wav','.m4a','.flac','.ogg','.mp4','.wma'):
+                        return self.send_json({'error':'Formato nao suportado'},400)
+                    blob=part.get_payload(decode=True) or b''
+                    if not blob or len(blob)>100*1024*1024:
+                        return self.send_json({'error':'Arquivo invalido ou excede 100 MB'},400)
+                job=uuid.uuid4().hex
+                with _EXPORT_LOCK:_EXPORT_JOBS[job]={'percent':1,'stage':'Recebido; iniciando analise','done':False}
+                def work():
+                    def update(pct,stage):
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(
+                            percent=max(_EXPORT_JOBS[job].get('percent',0),int(pct)),stage=str(stage))
+                    try:
+                        if route=='/api/youtube-start':
+                            from youtube_support import fetch_audio_and_analyze
+                            result=fetch_audio_and_analyze(url,CACHE,analyze,progress=update)
+                        else:
+                            import hashlib
+                            key=hashlib.sha256(blob).hexdigest()
+                            cached=CACHE/(key+'.json')
+                            if cached.exists():
+                                update(92,'Resultado encontrado no cache')
+                                result=json.loads(cached.read_text(encoding='utf-8'))
+                            else:
+                                with tempfile.NamedTemporaryFile(suffix=extension,delete=False) as t:
+                                    t.write(blob);path=t.name
+                                try:result=analyze(path,'en',progress=update)
+                                finally:os.unlink(path)
+                                cached.write_text(json.dumps(result,ensure_ascii=False),encoding='utf-8')
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(
+                            percent=100,stage='Analise concluida',done=True,result=result)
+                    except Exception as exc:
+                        traceback.print_exc()
+                        with _EXPORT_LOCK:_EXPORT_JOBS[job].update(
+                            stage='Falha na analise',error=str(exc),done=True)
+                threading.Thread(target=work,daemon=True).start()
+                return self.send_json({'job_id':job})
+            except Exception as exc:
+                traceback.print_exc()
+                return self.send_json({'error':str(exc)},400)
+        if route in ('/api/download-original','/api/separate-six','/api/separate-detailed'):
+            try:
+                import uuid,threading
+                from youtube_support import media_from_url, video_id_from_url
                 size=int(self.headers.get('Content-Length','0'))
                 if size<1 or size>4096:return self.send_json({'error':'Link invalido'},400)
                 data=json.loads(self.rfile.read(size).decode('utf-8'))
                 url=str(data.get('url',''))
-                video_id_from_url(url)
+                if route=='/api/download-original':
+                    media_from_url(url)
+                else:
+                    video_id_from_url(url)
                 job=uuid.uuid4().hex
                 with _EXPORT_LOCK:_EXPORT_JOBS[job]={'percent':1,'stage':'Iniciando','done':False}
                 def work():
                     def update(pct,stage):
                         with _EXPORT_LOCK:_EXPORT_JOBS[job].update(percent=pct,stage=stage)
                     try:
-                        from features_218 import download_original,separate_six
                         if route=='/api/download-original':
-                            output=download_original(url,CACHE,update)
+                            from video_fetch_233 import download
+                            output=download(url,CACHE,update)
                             result={'video_url':output}
-                        else:result=separate_six(url,CACHE,update)
+                        elif route=='/api/separate-six':
+                            from features_218 import separate_six
+                            result=separate_six(url,CACHE,update)
+                        else:
+                            from features_226 import separate_detailed
+                            result=separate_detailed(url,CACHE,update)
                         with _EXPORT_LOCK:_EXPORT_JOBS[job].update(done=True,percent=100,stage='Concluido',**result)
                     except Exception as exc:
                         traceback.print_exc()

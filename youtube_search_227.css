@@ -1,0 +1,6 @@
+/* MusicSense 227: resultados ampliados, visualizacoes e paginacao. */
+.ms227-views{font-size:11px!important;color:#9cefe9!important;font-weight:700!important}
+.ms227-results-note{color:#bdb0d7;background:#1b2132;padding:10px 12px;font-size:11px;line-height:1.5;border-radius:8px;margin:0 0 8px}
+.ms227-more{width:100%;margin:14px 0 18px!important;min-height:46px}
+.yt-result-info strong{line-height:1.35}
+.yt-results-list{overscroll-behavior:contain}
